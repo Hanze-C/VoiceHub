@@ -132,9 +132,9 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
     },
     {
       id: 'netease-backup-2',
-      name: '网易云备用源2',
+      name: 'ncmapi(hanze)',
       baseUrl: 'https://api-ncm.hanze.eu.org',
-      priority: 1.2,
+      priority: 1.1,
       enabled: true,
       timeout: 8000,
       headers: {
