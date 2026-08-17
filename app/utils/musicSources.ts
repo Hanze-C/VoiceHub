@@ -136,7 +136,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       id: 'netease-backup-1',
       name: 'NeteaseCloudMusicApi',
       baseUrl: '/api/api-enhanced/netease',
-      priority: 1,
+      priority: 1.1,
       enabled: true,
       timeout: 8000,
       headers: {
@@ -147,7 +147,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       id: 'netease-backup-2',
       name: 'ncmapi(hanze)',
       baseUrl: 'https://api-ncm.hanze.eu.org',
-      priority: 1.1,
+      priority: 1.2,
       enabled: true,
       timeout: 8000,
       headers: {
@@ -158,7 +158,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       id: 'meting-custom',
       name: 'Meting API(custom)',
       baseUrl: metingCustomBaseUrl,
-      priority: 2,
+      priority: 1,
       enabled: true,
       timeout: 8000,
       headers: {
