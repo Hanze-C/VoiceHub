@@ -113,6 +113,19 @@ export interface SongDetailResult {
  * 默认音源配置
  * 包含主音源 Vkeys 和两个网易云备用音源端点
  */
+const normalizeMetingBaseUrl = (value?: string): string => {
+  const normalized = (value || '').trim()
+  if (!normalized) {
+    return 'https://api.injahow.cn/meting/'
+  }
+
+  return `${normalized.replace(/\/+$/, '')}/`
+}
+
+const metingCustomBaseUrl = normalizeMetingBaseUrl(
+  process.env.NUXT_PUBLIC_METING_CUSTOM_BASE_URL || process.env.METING_CUSTOM_BASE_URL
+)
+
 export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
   primarySource: 'netease-backup-1',
   enableFailover: true,
@@ -135,6 +148,17 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       name: 'ncmapi(hanze)',
       baseUrl: 'https://api-ncm.hanze.eu.org',
       priority: 1.1,
+      enabled: true,
+      timeout: 8000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    },
+    {
+      id: 'meting-custom',
+      name: 'Meting API(custom)',
+      baseUrl: metingCustomBaseUrl,
+      priority: 2,
       enabled: true,
       timeout: 8000,
       headers: {

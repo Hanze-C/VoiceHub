@@ -590,6 +590,8 @@ export default defineNuxtConfig({
     public: {
       host: process.env.NUXT_PUBLIC_HOST || '', // 用于 CORS 和反向代理的主机名验证
       apiBase: '/api',
+      metingCustomBaseUrl:
+        process.env.NUXT_PUBLIC_METING_CUSTOM_BASE_URL || process.env.METING_CUSTOM_BASE_URL || '',
       oauth: {
         github: !!process.env.GITHUB_CLIENT_ID,
         casdoor: !!process.env.CASDOOR_CLIENT_ID,
