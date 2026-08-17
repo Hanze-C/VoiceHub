@@ -142,9 +142,9 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       }
     },
     {
-      id: 'meting-1',
-      name: 'Meting API 备用源1',
-      baseUrl: 'https://api-meting.hanze.eu.org/api/',
+      id: 'meting-injahow',
+      name: 'Meting API(injahow)',
+      baseUrl: 'https://api.injahow.cn/meting/',
       priority: 2.1,
       enabled: true,
       timeout: 8000,
@@ -153,10 +153,21 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       }
     },
     {
-      id: 'meting-2',
-      name: 'Meting API 备用源2',
-      baseUrl: 'https://api.qijieya.cn/meting/',
+      id: 'meting-hanze',
+      name: 'Meting API(hanze)',
+      baseUrl: 'https://api-meting.hanze.eu.org/api/',
       priority: 2.2,
+      enabled: true,
+      timeout: 8000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    },
+    {
+      id: 'meting-qijieya',
+      name: 'Meting API(qijieya)',
+      baseUrl: 'https://api.qijieya.cn/meting/',
+      priority: 2.3,
       enabled: true,
       timeout: 8000,
       headers: {
