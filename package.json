@@ -23,6 +23,8 @@
     "clear-db": "pnpm exec tsx scripts/clear-database.js",
     "safe-migrate": "pnpm exec tsx scripts/safe-migrate.js",
     "deploy": "node scripts/deploy.js",
+    "cf:build": "nuxt build --preset cloudflare_module",
+    "cf:deploy": "pnpm run cf:build && wrangler deploy",
     "vercel-build": "node scripts/deploy.js",
     "netlify-build": "node scripts/netlify-build.js",
     "check-deploy": "node scripts/check-deploy.js",
@@ -120,6 +122,7 @@
     "eslint": "^9.39.5",
     "prettier": "^3.9.6",
     "typescript": "^5.9.3",
-    "unocss": "^66.7.5"
+    "unocss": "^66.7.5",
+    "wrangler": "^4.25.0"
   }
 }

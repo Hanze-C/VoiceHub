@@ -724,11 +724,14 @@ export default defineNuxtConfig({
 
   // 服务器端配置
   nitro: {
-    preset: process.env.VERCEL
-      ? 'vercel'
-      : process.env.NETLIFY
-        ? 'netlify'
-        : process.env.NITRO_PRESET || 'node-server',
+    preset:
+      process.env.VERCEL
+        ? 'vercel'
+        : process.env.NETLIFY
+          ? 'netlify'
+          : process.env.CF_PAGES || process.env.CLOUDFLARE_PAGES
+            ? 'cloudflare_pages'
+            : process.env.NITRO_PRESET || 'node-server',
     // 增强错误处理和稳定性
     experimental: {
       wasm: true,

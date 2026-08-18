@@ -153,6 +153,57 @@ bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh
 bash <(curl -sL https://gh-proxy.com/https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
 ```
 
+### Cloudflare Workers / Pages 部署
+
+VoiceHub 也支持部署到 Cloudflare Workers（Workers + Assets）和 Cloudflare Pages 运行时。项目已经接入 Nuxt 的 Nitro Cloudflare 预设，构建时可直接选择 `cloudflare_module` 或 `cloudflare_pages`。
+
+#### 1. 本地构建
+
+```bash
+pnpm install
+pnpm run cf:build
+```
+
+如果要以 Pages 预设构建，可直接设置：
+
+```bash
+NITRO_PRESET=cloudflare_pages pnpm exec nuxt build
+```
+
+#### 2. 本地部署
+
+使用仓库内的 `wrangler.jsonc` 配置：
+
+```bash
+pnpm run cf:deploy
+```
+
+如果使用 Cloudflare Pages 方式，则可以部署静态输出：
+
+```bash
+NITRO_PRESET=cloudflare_pages pnpm exec nuxt build
+npx wrangler pages deploy .output/public --project-name=voicehub
+```
+
+#### 3. 环境变量要求
+
+在 Cloudflare 环境中，至少准备以下变量：
+
+```bash
+DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
+JWT_SECRET=your-very-secure-jwt-secret-key
+NODE_ENV=production
+```
+
+如果是 Pages/Workers 运行时，建议同时配置：
+
+```bash
+NUXT_PUBLIC_HOST=your-domain.example.com
+CLOUDFLARE_PROJECT_NAME=voicehub
+```
+
+> Cloudflare Workers 与 Pages 运行时都需要 PostgreSQL 作为主数据库，不能只依赖本地内存缓存；同时建议将 Redis 作为可选的短期状态服务。
+
 ### Docker 部署
 
 VoiceHub 支持通过 Docker 进行容器化部署，提供了多种部署方式。
@@ -668,7 +719,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 | NODE_ENV               | 否   | 运行环境，development或production                       | `production`                                                                                                                                    |
 | REDIS_URL              | 否   | Redis短期状态服务连接字符串，用于验证码、限流和临时锁定 | `redis://default:password@host:port`                                                                                                            |
 | REDIS_KEY_PREFIX       | 否   | Redis键命名空间，多环境共用Redis时应分别设置            | `voicehub:v2:`                                                                                                                                  |
-| NITRO_PRESET           | 否   | Nitro预设                                               | `vercel`                                                                                                                                        |
+| NITRO_PRESET           | 否   | Nitro预设，可设为 `cloudflare_module` / `cloudflare_pages` | `cloudflare_module`                                                                                                                             |
 | NUXT_PUBLIC_HOST       | 否   | 用于 CORS 和反向代理的主机名验证                        | `your-app.com`                                                                                                                                  |
 | NUXT_PUBLIC_SEO_CONFIG | 否   | 用于自定义 PWA/SEO 配置的 JSON 字符串                   | `{"title":"VoiceHub校园广播站点歌系统","shortName":"校园广播","description":"校园广播站点歌系统 - 让你的声音被听见","logo":"/images/logo.png"}` |
 
@@ -735,6 +786,7 @@ VoiceHub/
 │       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
 │       ├── nix.yml            # Nix 构建校验
 │       └── update-nix-pnpm-hash.yml # 自动同步 pnpmDeps 哈希
+├── wrangler.jsonc            # Cloudflare Workers 部署配置
 ├── app/                       # Nuxt 4 应用主目录
 │   ├── app.vue                # 应用入口文件
 │   ├── assets/                # 静态资源目录

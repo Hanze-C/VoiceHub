@@ -27,6 +27,10 @@ const SUPPORTED_ENV_VARIABLES = [
   'NODE_ENV',
   'NODE_OPTIONS',
   'NITRO_PRESET',
+  'CF_PAGES',
+  'CLOUDFLARE_PAGES',
+  'CLOUDFLARE_ACCOUNT_ID',
+  'CLOUDFLARE_PROJECT_NAME',
   'VERCEL',
   'VERCEL_ENV',
   'NETLIFY',
@@ -158,6 +162,7 @@ function printSensitiveItem(name, value, result) {
 function resolveNitroPreset() {
   if (process.env.VERCEL) return 'vercel（由 VERCEL 检测）'
   if (process.env.NETLIFY) return 'netlify（由 NETLIFY 检测）'
+  if (process.env.CF_PAGES || process.env.CLOUDFLARE_PAGES) return 'cloudflare_pages（由 Cloudflare 检测）'
   return `${process.env.NITRO_PRESET || 'node-server'}${process.env.NITRO_PRESET ? '' : '（默认值）'}`
 }
 
@@ -212,6 +217,12 @@ function printBuildEnvironment(rawNodeOptions) {
   printItem('NODE_ENV', displayValue(process.env.NODE_ENV), process.env.NODE_ENV || '由 Nuxt 决定')
   printItem('NODE_OPTIONS', displayValue(rawNodeOptions), process.env.NODE_OPTIONS)
   printItem('NITRO_PRESET', displayValue(process.env.NITRO_PRESET), resolveNitroPreset())
+  printItem('CF_PAGES', displayValue(process.env.CF_PAGES), process.env.CF_PAGES ? '已检测' : '未检测')
+  printItem(
+    'CLOUDFLARE_PAGES',
+    displayValue(process.env.CLOUDFLARE_PAGES),
+    process.env.CLOUDFLARE_PAGES ? '已检测' : '未检测'
+  )
   printItem('VERCEL', displayValue(process.env.VERCEL), process.env.VERCEL ? '已检测' : '未检测')
   printItem('VERCEL_ENV', displayValue(process.env.VERCEL_ENV), process.env.VERCEL_ENV || '未检测')
   printItem('NETLIFY', displayValue(process.env.NETLIFY), process.env.NETLIFY ? '已检测' : '未检测')
