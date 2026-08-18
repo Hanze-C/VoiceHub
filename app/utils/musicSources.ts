@@ -133,6 +133,17 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
   retryAttempts: 2,
   sources: [
     {
+      id: 'meting-custom',
+      name: 'Meting API(custom)',
+      baseUrl: metingCustomBaseUrl,
+      priority: 1,
+      enabled: true,
+      timeout: 8000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    },
+    {
       id: 'netease-backup-1',
       name: 'NeteaseCloudMusicApi',
       baseUrl: '/api/api-enhanced/netease',
@@ -148,17 +159,6 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       name: 'ncmapi(hanze)',
       baseUrl: 'https://api-ncm.hanze.eu.org',
       priority: 1.2,
-      enabled: true,
-      timeout: 8000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    },
-    {
-      id: 'meting-custom',
-      name: 'Meting API(custom)',
-      baseUrl: metingCustomBaseUrl,
-      priority: 1,
       enabled: true,
       timeout: 8000,
       headers: {
