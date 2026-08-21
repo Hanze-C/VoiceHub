@@ -111,7 +111,7 @@ export interface SongDetailResult {
 
 /**
  * 默认音源配置
- * 包含主音源 Vkeys 和两个网易云备用音源端点
+ * 内置网易云和 QQ 音乐音源只保留已验证可用的请求路径。
  */
 export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
   primarySource: 'netease-backup-1',
@@ -131,28 +131,6 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       }
     },
     {
-      id: 'netease-backup-2',
-      name: 'ncmapi(hanze)',
-      baseUrl: 'https://api-ncm.hanze.eu.org',
-      priority: 1.1,
-      enabled: true,
-      timeout: 8000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    },
-    {
-      id: 'meting-injahow',
-      name: 'Meting API(injahow)',
-      baseUrl: 'https://api.injahow.cn/meting/',
-      priority: 2.1,
-      enabled: true,
-      timeout: 8000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    },
-    {
       id: 'meting-hanze',
       name: 'Meting API(hanze)',
       baseUrl: 'https://api-meting.hanze.eu.org/api/',
@@ -164,19 +142,8 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       }
     },
     {
-      id: 'meting-qijieya',
-      name: 'Meting API(qijieya)',
-      baseUrl: 'https://api.qijieya.cn/meting/',
-      priority: 2.3,
-      enabled: true,
-      timeout: 8000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    },
-    {
       id: 'vkeys-v3',
-      name: 'Vkeys音源 (v3)',
+      name: 'Vkeys QQ 音乐 (v3)',
       baseUrl: 'https://api.vkeys.cn/music',
       priority: 3.1,
       enabled: true,
@@ -184,17 +151,49 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
     },
     {
       id: 'vkeys',
-      name: 'Vkeys音源',
+      name: 'Vkeys QQ 音乐 (v2)',
       baseUrl: 'https://api.vkeys.cn/v2/music',
       priority: 3.2,
       enabled: true,
       timeout: 10000
     },
     {
+      id: 'ygking-qq',
+      name: 'Ygking QQ 音乐备用',
+      baseUrl: 'https://api.ygking.top/api/song/url',
+      priority: 4,
+      enabled: true,
+      timeout: 8000
+    },
+    {
+      id: 'netease-gdstudio',
+      name: 'GD Studio 网易云',
+      baseUrl: 'https://music-api.gdstudio.xyz/api.php',
+      priority: 5,
+      enabled: true,
+      timeout: 10000
+    },
+    {
+      id: 'meting-1',
+      name: 'Meting API 网易云备用源1',
+      baseUrl: 'https://api.qijieya.cn/meting/',
+      priority: 6,
+      enabled: true,
+      timeout: 8000
+    },
+    {
+      id: 'meting-2',
+      name: 'Meting API 网易云备用源2',
+      baseUrl: 'https://api.injahow.cn/meting/',
+      priority: 7,
+      enabled: true,
+      timeout: 8000
+    },
+    {
       id: 'bilibili',
       name: '哔哩哔哩',
       baseUrl: 'https://api.bilibili.com',
-      priority: 4,
+      priority: 8,
       enabled: true,
       timeout: 10000
     },
@@ -202,7 +201,7 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       id: 'migu',
       name: '咪咕音乐',
       baseUrl: '/api/native-api/migu/playurl',
-      priority: 5,
+      priority: 9,
       enabled: true,
       timeout: 10000
     }
