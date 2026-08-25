@@ -76,6 +76,17 @@ export const siteConfig = {
   limitLabelPrefix: '',
   limitLabelSuffix: '投稿上限',
 
+  // 排期可见范围
+  scheduleVisibility: '排期可见范围',
+  scheduleVisibilityDesc: '仅控制普通用户在前端可见的播出排期时间范围。管理员不受此限制。',
+  daysBeforeEnabled: '启用可见前限制',
+  daysBeforeEnabledDesc: '启用后，普通用户仅可查看最近设置天数内的排期。',
+  daysAfterEnabled: '启用可见后限制',
+  daysAfterEnabledDesc: '启用后，普通用户仅可查看未来设置天数内的排期。',
+  daysBefore: '可见前',
+  daysAfter: '可见后',
+  daysUnit: '天',
+
   // 安全与隐私
   securityPrivacy: '安全与隐私设置',
   captchaEnabled: '启用登录人机验证',
@@ -380,6 +391,25 @@ export const pages = {
     oauthBindingDesc: '绑定社交账号以便更快捷地登录系统',
     changePassword: '修改密码',
     changePasswordDesc: '为了您的账号安全，建议定期更换高强度密码',
+    sessions: {
+      title: '登录会话',
+      desc: '查看并退出当前正在使用你账号的设备。',
+      refresh: '刷新',
+      loading: '正在加载登录会话...',
+      empty: '暂无活跃的登录会话',
+      current: '当前',
+      ip: 'IP',
+      loginMethod: '登录方式',
+      lastActive: '最后活跃',
+      expiresAt: '到期时间',
+      logout: '登出',
+      logoutOthers: '退出其他会话',
+      logoutSuccess: '已退出该登录会话',
+      logoutOthersSuccess: '已退出其他登录会话',
+      logoutFailed: '退出登录会话失败',
+      loadFailed: '加载登录会话失败',
+      methods: { password: '密码', twoFactor: '双重认证', oauth: '第三方登录', webauthn: '通行密钥', legacy: '历史会话' }
+    },
     social: {
       title: '社交账号绑定',
       desc: '绑定您的社交账号以接收实时推送通知',
