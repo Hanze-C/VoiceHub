@@ -465,7 +465,7 @@ nix run .#build                # 在项目目录中执行，生成 .output 目�
 
 #### 前提条件
 
-- Node.js 20+
+- Node.js 22.11+
 - PostgreSQL 数据库（推荐使用 Neon）
 - Redis 数据库（可选；多实例或 Serverless 部署建议配置）
 
@@ -670,23 +670,8 @@ VoiceHub 实现了细粒度的权限控制系统：
 | REDIS_URL              | 否   | Redis短期状态服务连接字符串，用于验证码、限流和临时锁定 | `redis://default:password@host:port`                                                                                                            |
 | REDIS_KEY_PREFIX       | 否   | Redis键命名空间，多环境共用Redis时应分别设置            | `voicehub:v2:`                                                                                                                                  |
 | NITRO_PRESET           | 否   | Nitro预设                                               | `vercel`                                                                                                                                        |
-| NUXT_PUBLIC_HOST       | 否   | 用于 CORS 和反向代理的主机名验证                        | `your-app.com`                                                                                                                                  |
+| NUXT_PUBLIC_HOST       | 否   | 显式配置站点外部地址后启用内部 API 的 CORS 来源校验；未配置时仅对回环 Host（反向代理常见场景）跳过，云平台公开 Host 仍校验 | `https://your-app.com` |
 | NUXT_PUBLIC_SEO_CONFIG | 否   | 用于自定义 PWA/SEO 配置的 JSON 字符串                   | `{"title":"VoiceHub校园广播站点歌系统","shortName":"校园广播","description":"校园广播站点歌系统 - 让你的声音被听见","logo":"/images/logo.png"}` |
-
-Redis 不参与歌曲、排期、点赞或用户资料缓存。迁移旧部署时可先执行 dry-run：
-
-```bash
-pnpm run redis:scan-legacy
-```
-
-确认 Redis 数据库为 VoiceHub 独占后，才可显式执行清理。PowerShell 示例：
-
-```powershell
-$env:REDIS_LEGACY_CLEANUP_CONFIRM = 'VOICEHUB'
-pnpm run redis:scan-legacy -- --apply
-```
-
-共享 Redis 默认不会自动删除；禁止使用 `FLUSHDB`。
 
 ## OAuth 配置
 
@@ -772,6 +757,7 @@ VoiceHub/
 │   │   │   ├── NotificationHistory.vue # 通知发送历史与用户已读明细
 │   │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
+│   │   │   ├── OAuthBindingsModal.vue # OAuth 绑定详情弹窗
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
 │   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件
@@ -790,6 +776,8 @@ VoiceHub/
 │   │   │   ├── SongManagement.vue     # 歌曲管理
 │   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
 │   │   │   ├── UserManager.vue        # 用户管理
+│   │   │   ├── UserApprovalModal.vue  # 用户注册审核弹窗
+│   │   │   ├── GradeClassManager.vue  # 年级班级配置管理
 │   │   │   ├── UserSongsModal.vue     # 用户歌曲查看弹窗
 │   │   │   └── VotersModal.vue        # 投票人员查看弹窗
 │   │   ├── AMLL/              # Apple Music-Like Lyrics组件
@@ -809,6 +797,7 @@ VoiceHub/
 │   │   │   ├── TurnstileWidget.vue   # Cloudflare Turnstile验证组件
 │   │   │   ├── OAuthButtons.vue      # OAuth登录按钮组
 │   │   │   ├── OAuthQuickLogin.vue   # 微信/QQ内置浏览器快速登录按钮
+│   │   │   ├── OAuthBindReminderModal.vue # 微信/QQ内置浏览器账号密码登录绑定引导弹窗
 │   │   │   ├── TwoFactorSetup.vue    # 双重认证设置组件
 │   │   │   └── TwoFactorVerify.vue   # 双重认证验证组件
 │   │   ├── Common/            # 通用组件
@@ -899,6 +888,7 @@ VoiceHub/
 │   │   ├── useMusicSources.ts    # 音乐源管理hooks
 │   │   ├── useMusicWebSocket.ts  # 音乐WebSocket hooks
 │   │   ├── useNotifications.ts # 通知功能hooks
+│   │   ├── useOAuthBindReminder.ts # 微信/QQ绑定引导浏览器存储状态hooks
 │   │   ├── usePlatformConfig.ts    # 平台管理配置hooks
 │   │   ├── usePermissions.ts   # 权限管理hooks
 │   │   ├── usePasswordStrength.ts # 密码强度检测hooks
@@ -981,6 +971,8 @@ VoiceHub/
 │       │   └── qrc-parser.ts  # QRC格式解析
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── debounce.ts       # 防抖工具
+│       ├── grade-class-input.ts # 年级班级批量输入解析
+│       ├── gradeClassWeights.js # 年级排序权重
 │       ├── lyricAdapter.ts    # 歌词适配器
 │       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
@@ -989,6 +981,7 @@ VoiceHub/
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── oauth-register.ts  # OAuth注册工具
+│       ├── email-verification.ts # 注册邮箱验证码
 │       ├── embedded-browser.ts # 微信/QQ内置浏览器UA检测
 │       ├── password-policy.ts # 统一密码策略
 │       ├── oauth.ts           # OAuth工具
@@ -1032,6 +1025,12 @@ VoiceHub/
 │   │   │   │   ├── [id].patch.ts    # 更新黑名单项
 │   │   │   │   ├── index.get.ts     # 获取黑名单列表
 │   │   │   │   └── index.post.ts    # 添加黑名单项
+│   │   │   ├── grade-class/         # 年级班级配置API
+│   │   │   │   ├── [id].delete.ts   # 删除配置项
+│   │   │   │   ├── by-grade.delete.ts # 按年级删除配置
+│   │   │   │   ├── initialize.post.ts # 从现有用户提取初始化
+│   │   │   │   ├── index.get.ts     # 获取配置列表
+│   │   │   │   └── index.post.ts    # 新增配置项
 │   │   │   ├── card-codes/          # 点歌券管理API
 │   │   │   │   ├── [id].put.ts      # 更新单张点歌券
 │   │   │   │   ├── create.post.ts   # 创建点歌券
@@ -1121,6 +1120,7 @@ VoiceHub/
 │   │   │       │   ├── songs.get.ts     # 获取用户点歌记录
 │   │   │       │   ├── status-logs.get.ts # 获取用户状态变更日志
 │   │   │       │   └── status.put.ts    # 更新用户状态
+│   │   │       ├── [id].approval.post.ts # 注册审核
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
 │   │   │       ├── [id].get.ts      # 用户详情
@@ -1139,6 +1139,8 @@ VoiceHub/
 │   │   ├── auth/           # 认证API
 │   │   │   ├── captcha.get.ts         # 图形验证码
 │   │   │   ├── oauth-register-options.get.ts # OAuth注册选项
+│   │   │   ├── grade-class-options.get.ts # 年级班级选项
+│   │   │   ├── email-code.post.ts # 注册邮箱验证码发送
 │   │   │   ├── 2fa/             # 2FA验证API
 │   │   │   │   ├── send-email.post.ts # 发送2FA验证邮件
 │   │   │   │   └── verify.post.ts     # 验证2FA代码
@@ -1160,6 +1162,7 @@ VoiceHub/
 │   │   │   ├── login.post.ts        # 用户登录
 │   │   │   ├── logout.post.ts       # 用户登出
 │   │   │   ├── oauth-register.post.ts # OAuth用户注册
+│   │   │   ├── register.post.ts       # 用户名密码注册
 │   │   │   ├── reset-password.post.ts # 重置密码
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
 │   │   │   ├── unbind.post.ts        # 解绑社交账号
@@ -1277,6 +1280,7 @@ VoiceHub/
 │   │   │   │   ├── send-code.post.ts # 发送验证码
 │   │   │   │   ├── unbind.post.ts   # 解绑邮箱
 │   │   │   │   └── verify-code.post.ts # 验证邮箱验证码
+│   │   │   ├── avatar.post.ts      # 设置 OAuth 头像来源
 │   │   │   ├── sessions.delete.ts    # 撤销登录会话
 │   │   │   ├── sessions.get.ts       # 获取登录会话列表
 │   │   │   └── year-review.get.ts   # 获取年度回顾数据
@@ -1328,6 +1332,8 @@ VoiceHub/
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
+│   │   ├── grade-class-core.ts # 年级班级选项纯函数
+│   │   ├── grade-class-options.ts # 年级班级选项提取工具
 │   │   ├── initial-password-policy.ts # 初始密码设置状态策略
 │   │   ├── important-notification-policy.ts # 重要通知发送与展示策略
 │   │   ├── notification-history-policy.ts # 通知批次引用、筛选与分页策略
@@ -1341,10 +1347,13 @@ VoiceHub/
 │   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
 │   │   ├── oauth-strategies.ts # OAuth策略配置
 │   │   ├── oauth-token.ts  # OAuth令牌工具
+│   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
+│   │   ├── register-validation.ts # 注册校验纯函数
+│   │   ├── registration-notify.ts # 注册结果通知
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
@@ -1355,6 +1364,7 @@ VoiceHub/
 │   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
 │   │   ├── scheduleSongPool.ts # 排期备选池统计工具
 │   │   ├── serverTime.ts   # 服务器时间工具
+│   │   ├── sequence-sync.ts # 自增序列同步工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
@@ -1363,6 +1373,7 @@ VoiceHub/
 │   │   ├── theme-config.ts # 主题配置校验与解析工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
+│   │   ├── user-avatar.ts  # OAuth 头像来源解析工具
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
 │   └── tsconfig.json       # 服务端TypeScript配置
@@ -1383,12 +1394,14 @@ VoiceHub/
 ├── tests/                 # 自动化测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
-│       └── token-version-policy.test.ts # 令牌版本策略测试
+│       ├── token-version-policy.test.ts # 令牌版本策略测试
+│       └── user-avatar.test.ts # OAuth 头像来源解析测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义

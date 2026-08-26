@@ -31,27 +31,45 @@
         </button>
       </div>
 
-      <div
-        class="flex items-center justify-between bg-bg-secondary-50 p-4 rounded-xl border border-border-secondary-50"
-      >
-        <div>
-          <label :class="labelClass">{{ locale.allowRegistration }}</label>
-          <p class="text-[10px] text-text-disabled mt-1">{{ locale.allowRegistrationDesc }}</p>
+      <div class="rounded-xl border border-border-secondary bg-bg-primary-50">
+        <div class="flex items-center justify-between p-3">
+          <div class="pr-4">
+            <p class="text-xs font-bold text-text-primary">{{ locale.allowRegistration }}</p>
+            <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.allowRegistrationDesc }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              :class="[
+                'text-[10px] font-bold',
+                formData.allowOAuthRegistration ? 'text-success' : 'text-text-tertiary'
+              ]"
+            >
+              {{ formData.allowOAuthRegistration ? locale.allowed : locale.notAllowed }}
+            </span>
+            <input
+              v-model="formData.allowOAuthRegistration"
+              type="checkbox"
+              class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-green-600 cursor-pointer"
+            />
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span
-            :class="[
-              'text-[10px] font-bold',
-              formData.allowOAuthRegistration ? 'text-success' : 'text-text-tertiary'
-            ]"
-          >
-            {{ formData.allowOAuthRegistration ? locale.allowed : locale.notAllowed }}
-          </span>
-          <input
-            v-model="formData.allowOAuthRegistration"
-            type="checkbox"
-            class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-green-600 cursor-pointer"
-          />
+
+        <div
+          v-if="formData.allowOAuthRegistration"
+          class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
+        >
+          <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ locale.oauthRegisterRequiresApproval }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.oauthRegisterRequiresApprovalDesc }}</p>
+            </div>
+            <input
+              v-model="formData.oauthRegisterRequiresApproval"
+              type="checkbox"
+              :disabled="!formData.allowOAuthRegistration"
+              class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+            />
+          </div>
         </div>
       </div>
 
@@ -149,7 +167,7 @@
           <input
             v-model="formData.aggregateOAuthEndpoint"
             type="url"
-            placeholder="https://a.idcfx.net/connect.php"
+            placeholder="https://example.com/connect.php"
             :class="inputClass"
           />
           <p class="text-[10px] text-text-disabled px-1 mt-2">
@@ -158,6 +176,33 @@
               '兼容彩虹聚合登录协议的服务端 connect.php 地址；公网应使用 HTTPS，可信内网可使用 HTTP。'
             }}
           </p>
+        </div>
+
+        <div class="pt-2 border-t border-border-secondary/60">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-error-5 border border-error-15 rounded-xl"
+          >
+            <div>
+              <p class="text-xs font-bold text-error">
+                {{ locale.clearBindingsTitle || '清除所有聚合登录绑定' }}
+              </p>
+              <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">
+                {{
+                  locale.clearBindingsDesc ||
+                  '更换聚合登录提供商时使用，将清除系统中所有用户的聚合登录绑定关系并要求其重新绑定。'
+                }}
+              </p>
+            </div>
+            <button
+              type="button"
+              :disabled="clearingBindings"
+              class="shrink-0 px-3.5 py-2 bg-error-10 hover:bg-error-20 text-error border border-error-20 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 self-start sm:self-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="showClearConfirm = true"
+            >
+              <Trash2 :size="13" />
+              {{ locale.clearBindingsBtn || '清除绑定' }}
+            </button>
+          </div>
         </div>
       </template>
     </AdminProviderConfigSection>
@@ -330,15 +375,32 @@
         </p>
       </div>
     </div>
+
+    <!-- 清除聚合登录绑定二次确认弹窗 -->
+    <ConfirmDialog
+      v-model:show="showClearConfirm"
+      type="danger"
+      :title="locale.clearBindingsConfirmTitle || '确认清除所有聚合登录绑定？'"
+      :message="
+        locale.clearBindingsConfirmMessage ||
+        '此操作将永久清除系统中所有用户的聚合登录绑定关系。\n若更换了聚合登录提供商，旧数据已失效，清除后用户需重新绑定方可通过聚合登录访问账号。\n此操作不可撤销，是否继续？'
+      "
+      :confirm-text="locale.clearBindingsBtn || '清除绑定'"
+      :loading="clearingBindings"
+      @confirm="handleClearBindings"
+      @cancel="showClearConfirm = false"
+    />
   </section>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { AlertCircle, Shield, Download } from '@lucide/vue'
+import { AlertCircle, Shield, Download, Trash2 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors, useLocaleText } from '~/composables/useLocaleText'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import {
   AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS,
   getAggregateOAuthLoginTypesOrDefault
@@ -355,7 +417,9 @@ const emits = defineEmits(['update:modelValue'])
 
 const { showToast } = useToast()
 const { admin } = useLocale()
+const { localize: localizeServerError } = useServerErrors()
 const locale = computed(() => admin.value?.oauthConfig || {})
+const { t: callLocale } = useLocaleText(locale)
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
 
 const inputClass =
@@ -367,6 +431,9 @@ const showSecrets = ref({
   state: false,
   custom: false
 })
+
+const showClearConfirm = ref(false)
+const clearingBindings = ref(false)
 
 const formData = computed({
   get: () => props.modelValue,
@@ -429,9 +496,7 @@ const oauthProviders = computed(() => [
     clientIdPlaceholder: locale.value?.aggregateClientIdPlaceholder || '输入聚合登录 AppID',
     clientSecretLabel: 'AppKey',
     clientSecretPlaceholder:
-      locale.value?.aggregateClientSecretPlaceholder || '输入聚合登录 AppKey',
-    docUrl: 'https://a.idcfx.net/doc.php#',
-    docLabel: locale.value?.aggregateDocLabel || '查看聚合登录开发文档'
+      locale.value?.aggregateClientSecretPlaceholder || '输入聚合登录 AppKey'
   }
 ])
 
@@ -470,6 +535,25 @@ const importEnvData = async (provider) => {
   } catch (e) {
     console.error(getLogMessage('importEnvFailed'), e)
     showToast(locale.value?.importFailed || 'OAuth 配置导入失败', 'error')
+  }
+}
+
+const handleClearBindings = async () => {
+  clearingBindings.value = true
+  try {
+    const res = await $fetch('/api/admin/system-settings/clear-aggregate-bindings', {
+      method: 'POST'
+    })
+    showClearConfirm.value = false
+    showToast(callLocale('clearBindingsSuccess', `已成功清除 ${res.count} 条聚合登录绑定数据（影响 ${res.usersAffected} 位用户）`, res.count, res.usersAffected), 'success')
+  } catch (err) {
+    console.error('清除聚合登录绑定失败:', err)
+    showToast(
+      localizeServerError(err) || locale.value?.clearBindingsFailed || '清除聚合登录绑定失败',
+      'error'
+    )
+  } finally {
+    clearingBindings.value = false
   }
 }
 

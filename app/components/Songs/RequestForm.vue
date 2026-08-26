@@ -1,7 +1,10 @@
 <template>
   <div class="request-form">
     <div class="rules-section desktop-only-rules">
-      <h2 class="section-title">{{ locale.guidelinesTitle }}</h2>
+      <h2 class="rules-title">
+        <Icon :size="16" class="rules-icon" name="bell" />
+        {{ locale.guidelinesTitle }}
+      </h2>
       <div class="rules-content-desktop">
         <div
           v-if="submissionGuidelines"
@@ -53,9 +56,11 @@
                 v-model="title"
                 class="search-input"
                 :placeholder="locale.searchPlaceholder"
+                enterkeyhint="search"
                 required
                 type="text"
-              />
+                @keydown.enter.prevent="handleSearch"
+              >
               <button
                 :disabled="loading || searching || !title.trim()"
                 class="search-button"
@@ -264,16 +269,16 @@
                       :src="convertToHttps(neteaseUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    />
+                    >
                     <span class="user-name">{{ neteaseUser?.nickname || locale.loggedIn }}</span>
                   </div>
 
                   <div class="search-type-switch">
                     <label :class="['radio-label', { active: searchType === 1 }]">
-                      <input v-model="searchType" :value="1" type="radio" /> {{ locale.single }}
+                      <input v-model="searchType" :value="1" type="radio" > {{ locale.single }}
                     </label>
                     <label :class="['radio-label', { active: searchType === 1009 }]">
-                      <input v-model="searchType" :value="1009" type="radio" /> {{ locale.podcast }}
+                      <input v-model="searchType" :value="1009" type="radio" > {{ locale.podcast }}
                     </label>
                   </div>
 
@@ -344,7 +349,7 @@
                       :src="convertToHttps(qqMusicUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    />
+                    >
                     <div v-else class="qq-user-avatar">
                       <Icon :size="14" name="music" />
                     </div>
@@ -434,6 +439,7 @@
                           v-model="submissionNotePublic"
                           type="checkbox"
                           class="custom-checkbox-input"
+                          :disabled="submissionNoteRequiresApproval || !siteConfigLoaded"
                         />
                         <span class="custom-checkbox-box">
                           <svg
@@ -461,8 +467,12 @@
                     maxlength="300"
                     class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary-60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-50 focus:ring-1 focus:ring-primary-10 resize-y transition-all"
                   />
-                  <div class="mt-1 flex justify-end text-[11px] text-text-tertiary">
-                    <span>{{ submissionNote.length }}/300</span>
+                  <div class="mt-1 flex items-center justify-between gap-2 text-[11px] text-text-tertiary">
+                    <p v-if="submissionNoteRequiresApproval" class="flex min-w-0 items-center gap-1">
+                      <Icon name="info" size="12" class="shrink-0 text-warning" />
+                      <span class="truncate">{{ locale.submissionNoteApprovalHint }}</span>
+                    </p>
+                    <span class="shrink-0">{{ submissionNote.length }}/300</span>
                   </div>
                 </div>
               </div>
@@ -590,7 +600,7 @@
                         :alt="locale.coverAlt"
                         class="cover-img"
                         referrerpolicy="no-referrer"
-                      />
+                      >
                       <div v-if="!isBilibiliMultiP(result)" class="play-overlay-container">
                         <div class="play-button-wrapper">
                           <Icon name="play" :size="20" class="play-icon" />
@@ -837,7 +847,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" />
+                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" >
                 </div>
               </div>
             </Transition>
@@ -1010,7 +1020,7 @@
                 class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-warning-10"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
-              />
+              >
               <p
                 :class="[
                   'mt-2 px-1 text-[11px]',
@@ -1161,7 +1171,7 @@
                           v-if="match.cover"
                           :src="match.cover"
                           class="w-full h-full object-cover"
-                        />
+                        >
                         <Music v-else class="w-5 h-5 text-text-tertiary" />
                         <div
                           class="absolute inset-0 bg-bg-primary-50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
@@ -1246,7 +1256,7 @@
                       class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-tertiary font-bold focus:outline-none cursor-not-allowed transition-all"
                       readonly
                       type="text"
-                    />
+                    >
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
                       <Lock class="w-4 h-4 text-text-disabled" />
                     </div>
@@ -1267,7 +1277,7 @@
                     :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
-                  />
+                  >
                 </div>
 
                 <!-- 歌曲封面地址 -->
@@ -1289,7 +1299,7 @@
                       ]"
                       :placeholder="locale.coverPlaceholder"
                       type="url"
-                    />
+                    >
                     <div
                       v-if="coverValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1338,7 +1348,7 @@
                       ]"
                       :placeholder="locale.playUrlPlaceholder"
                       type="url"
-                    />
+                    >
                     <div
                       v-if="playUrlValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1401,7 +1411,7 @@
       style="display: none"
       type="file"
       @change="handleImportData"
-    />
+    >
   </div>
 </template>
 
@@ -1462,7 +1472,9 @@ const {
   enableSubmissionLimit,
   enableCardCodeRequests,
   requireCardCodeForRequests,
-  enableCardCodeLimitBypass
+  enableCardCodeLimitBypass,
+  submissionNoteRequiresApproval,
+  isLoaded: siteConfigLoaded
 } = useSiteConfig()
 
 // 将投稿须知 Markdown 渲染为安全 HTML
@@ -4269,22 +4281,13 @@ defineExpose({
   overflow-y: auto;
 }
 
-.section-title {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 400;
-  font-size: 15px;
-  letter-spacing: 0.04em;
-  color: var(--overlay-60);
-  margin-bottom: 0.75rem;
-}
-
 .rules-content-desktop {
   font-family: 'MiSans', sans-serif;
   font-weight: 400;
   font-size: 15px;
   line-height: 1.7;
   letter-spacing: 0.04em;
-  color: var(--text-primary);
+  color: var(--overlay-40);
 }
 
 .rules-content-desktop p {
