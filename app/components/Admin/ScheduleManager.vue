@@ -192,19 +192,21 @@
           @dragleave="handleDraggableDragLeave"
           @drop.stop.prevent="handleReturnToDraggable"
         >
-          <div class="flex items-center justify-between px-1">
-            <h3 class="hidden lg:block text-lg font-black tracking-tight text-text-primary uppercase">
+          <div class="flex flex-wrap items-center justify-between gap-y-2 px-1">
+            <h3
+              class="hidden lg:block text-lg font-black tracking-tight text-text-primary uppercase whitespace-nowrap shrink-0"
+            >
               {{ activeTab === 'pool' ? locale.poolList : locale.pendingSongs }}
             </h3>
             <div class="flex items-center gap-2 w-full lg:w-auto">
               <div
-                class="flex flex-1 lg:flex-none gap-1 p-1 bg-bg-secondary-50 rounded-xl border border-border-secondary"
+                class="flex flex-1 lg:flex-none flex-wrap gap-1 p-1 bg-bg-secondary-50 rounded-xl border border-border-secondary"
               >
                 <button
                   v-for="tab in scheduleTabs"
                   :key="tab.id"
                   :class="[
-                    'flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    'flex-1 lg:flex-none px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                     activeTab === tab.id
                       ? 'bg-bg-tertiary text-primary shadow-md border border-primary-20'
                       : 'text-text-disabled hover:text-text-tertiary'
@@ -1424,6 +1426,22 @@
             </div>
           </div>
 
+          <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">{{ locale.targetRequesterCount }}</label>
+            <div class="flex gap-2">
+              <input
+                v-model.number="autoScheduleTargetRequesterCount"
+                type="number"
+                min="1"
+                step="1"
+                :placeholder="locale.targetRequesterCountPlaceholder"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                @keydown.enter="runAutoSchedule"
+              />
+              <span class="flex items-center text-xs text-text-disabled px-1">{{ locale.requesterCountUnit }}</span>
+            </div>
+          </div>
+
           <!-- 工具栏 -->
           <div class="flex items-center gap-2 p-2 bg-bg-secondary-50 border border-border-secondary rounded-xl">
             <div class="flex items-center gap-2 flex-1">
@@ -2035,7 +2053,27 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
 }
 
 // 音频播放器
-const { playSong } = useSongPlayer()
+const { playSong: playSongWithQueue } = useSongPlayer()
+
+// 播放歌曲：以歌曲所在列表（播放顺序/待排歌曲）作为播放队列，支持上下切歌与循环模式
+const playSong = (songOrSchedule) => {
+  // 兼容右键菜单传入的排期项（含 .song 字段）
+  const song = songOrSchedule && songOrSchedule.song ? songOrSchedule.song : songOrSchedule
+  if (!song) return
+  // 播放顺序列表中的歌曲，以播放顺序为队列
+  if (
+    localScheduledSongs.value.some((s) => s.song && String(s.song.id) === String(song.id))
+  ) {
+    playSongWithQueue(song, localScheduledSongs.value.map((s) => s.song))
+    return
+  }
+  // 待排歌曲列表中的歌曲，以当前待排列表为队列
+  if (filteredUnscheduledSongs.value.some((s) => String(s.id) === String(song.id))) {
+    playSongWithQueue(song, filteredUnscheduledSongs.value)
+    return
+  }
+  playSongWithQueue(song)
+}
 
 // 确认对话框相关
 const showConfirmDialog = ref(false)
@@ -2251,8 +2289,53 @@ const openContextMenu = (e, side, song) => {
 const closeContextMenu = () => { contextMenuOpen.value = false }
 const autoScheduleTargetMinutes = ref(null)
 const autoScheduleTargetSongCount = ref(null)
+const autoScheduleTargetRequesterCount = ref(null)
 const autoScheduleDirection = ref('under')
 const autoScheduleFixExisting = ref(false)
+const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 0 })
+const autoSchedulePlans = ref([])
+const currentPlanIndex = ref(0)
+const autoScheduleAlgorithm = ref('greedy')
+
+// 自动排期设置记忆（localStorage 持久化，下次打开弹窗沿用上次配置）
+const AUTO_SCHEDULE_SETTINGS_KEY = 'voicehub_auto_schedule_settings'
+const AUTO_SCHEDULE_DIRECTIONS = ['under', 'middle', 'over']
+const AUTO_SCHEDULE_ALGORITHMS = ['auto', 'greedy', 'exhaustive']
+const loadAutoScheduleSettings = () => {
+  if (!import.meta.client) return
+  try {
+    const saved = JSON.parse(localStorage.getItem(AUTO_SCHEDULE_SETTINGS_KEY) || 'null')
+    if (!saved || typeof saved !== 'object') return
+    if (Number.isFinite(saved.targetMinutes) && saved.targetMinutes > 0) autoScheduleTargetMinutes.value = saved.targetMinutes
+    if (Number.isFinite(saved.targetSongCount) && saved.targetSongCount > 0) autoScheduleTargetSongCount.value = Math.floor(saved.targetSongCount)
+    if (Number.isFinite(saved.targetRequesterCount) && saved.targetRequesterCount > 0) autoScheduleTargetRequesterCount.value = Math.floor(saved.targetRequesterCount)
+    if (AUTO_SCHEDULE_DIRECTIONS.includes(saved.direction)) autoScheduleDirection.value = saved.direction
+    if (AUTO_SCHEDULE_ALGORITHMS.includes(saved.algorithm)) autoScheduleAlgorithm.value = saved.algorithm
+    autoScheduleFixExisting.value = !!saved.fixExisting
+  } catch {
+    // 非法数据忽略，回退默认
+  }
+}
+const saveAutoScheduleSettings = () => {
+  if (!import.meta.client) return
+  try {
+    localStorage.setItem(AUTO_SCHEDULE_SETTINGS_KEY, JSON.stringify({
+      targetMinutes: autoScheduleTargetMinutes.value,
+      targetSongCount: autoScheduleTargetSongCount.value,
+      targetRequesterCount: autoScheduleTargetRequesterCount.value,
+      direction: autoScheduleDirection.value,
+      algorithm: autoScheduleAlgorithm.value,
+      fixExisting: autoScheduleFixExisting.value
+    }))
+  } catch {
+    // 存储失败忽略
+  }
+}
+watch(
+  [autoScheduleTargetMinutes, autoScheduleTargetSongCount, autoScheduleTargetRequesterCount, autoScheduleDirection, autoScheduleAlgorithm, autoScheduleFixExisting],
+  saveAutoScheduleSettings
+)
+loadAutoScheduleSettings()
 
 const autoScheduleScheduledSeconds = computed(() => {
   if (!autoScheduleFixExisting.value) return 0
@@ -2262,10 +2345,6 @@ const autoScheduleScheduledSeconds = computed(() => {
   }, 0)
 })
 
-const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 0 })
-const autoSchedulePlans = ref([])
-const currentPlanIndex = ref(0)
-const autoScheduleAlgorithm = ref('greedy')
 const actualExhaustive = computed(() => {
   return autoScheduleAlgorithm.value === 'exhaustive' ||
     (autoScheduleAlgorithm.value === 'auto' && autoScheduleCandidates.value.length < 20)
@@ -2645,10 +2724,11 @@ const allUnscheduledSongs = computed(() => {
   // 备选池模式
   if (activeTab.value === 'pool') {
     let poolSongs = songPool.value.filter((item) => {
+      // 与普通歌曲逻辑一致：已在任意日期排期（含草稿）或已加入当前播放顺序的歌曲不再展示
       const isScheduledInCurrentView = localScheduledSongs.value.some(
         (s) => (s.song && s.song.id === item.songId) || s.songId === item.songId
       )
-      return !isScheduledInCurrentView
+      return !isScheduledInCurrentView && !scheduledSongIds.value.has(item.songId)
     })
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase()
@@ -3921,13 +4001,11 @@ const handleAutoScheduleEscape = (e) => {
   }
 }
 
+// 打开/关闭/重置时保留用户上次的排期配置（由 localStorage 记忆）
 const openAutoScheduleDialog = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
-  autoScheduleAlgorithm.value = 'auto'
-  autoScheduleTargetSongCount.value = null
-  autoScheduleFixExisting.value = false
   showAutoScheduleDialog.value = true
 }
 const closeAutoScheduleDialog = () => {
@@ -3935,35 +4013,37 @@ const closeAutoScheduleDialog = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
-  autoScheduleAlgorithm.value = 'auto'
-  autoScheduleTargetSongCount.value = null
-  autoScheduleFixExisting.value = false
 }
 const resetAutoSchedule = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   autoSchedulePlans.value = []
   currentPlanIndex.value = 0
-  autoScheduleAlgorithm.value = 'auto'
-  autoScheduleTargetSongCount.value = null
-  autoScheduleFixExisting.value = false
 }
 
 const autoScheduleCandidates = computed(() => {
   const scheduledIds = new Set(localScheduledSongs.value.map((s) => s.song && s.song.id).filter(Boolean))
 
+  // 已加入其他日期草稿的歌曲，排除出自动排期范围
+  const otherDateDraftIds = new Set(
+    drafts.value
+      .filter((d) => d.song && d.song.id && d.playDate && getScheduleDateValue(d.playDate) !== selectedDate.value)
+      .map((d) => d.song.id)
+  )
+  const excludeIds = new Set([...scheduledIds, ...otherDateDraftIds])
+
   // 备选池模式
   if (activeTab.value === 'pool') {
     return songPool.value
-      .filter((item) => !scheduledIds.has(item.songId))
+      .filter((item) => !excludeIds.has(item.songId))
       .map(poolCandidateFromItem)
   }
 
   // 待排库/重播/所有：复用 allUnscheduledSongs 的过滤逻辑，再排除已排期歌曲
-  const base = allUnscheduledSongs.value.filter((s) => !scheduledIds.has(s.id))
+  const base = allUnscheduledSongs.value.filter((s) => !excludeIds.has(s.id))
   if (activeTab.value === 'all') {
     // 「所有」额外纳入备选池未排期的歌曲
     const poolCandidates = songPool.value
-      .filter((item) => !scheduledIds.has(item.songId))
+      .filter((item) => !excludeIds.has(item.songId))
       .map(poolCandidateFromItem)
     const baseIds = new Set(base.map((s) => s.id))
     return [...base, ...poolCandidates.filter((p) => !baseIds.has(p.songId))]
@@ -3999,7 +4079,10 @@ const runAutoSchedule = () => {
   const targetSongCount = Number.isFinite(autoScheduleTargetSongCount.value) && autoScheduleTargetSongCount.value > 0
     ? Math.floor(autoScheduleTargetSongCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount)
+  const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
+    ? Math.floor(autoScheduleTargetRequesterCount.value)
+    : null
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, 10, targetSongCount, targetRequesterCount)
   const plansArray = Array.isArray(results) ? results : [results]
   const first = plansArray[0]
   if (!first || first.songs.length === 0) {
@@ -4028,7 +4111,10 @@ const generateMorePlans = async () => {
   const targetSongCount = Number.isFinite(autoScheduleTargetSongCount.value) && autoScheduleTargetSongCount.value > 0
     ? Math.floor(autoScheduleTargetSongCount.value)
     : null
-  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount)
+  const targetRequesterCount = Number.isFinite(autoScheduleTargetRequesterCount.value) && autoScheduleTargetRequesterCount.value > 0
+    ? Math.floor(autoScheduleTargetRequesterCount.value)
+    : null
+  const results = fn(autoScheduleDirection.value, autoScheduleTargetMinutes.value, candidates, preSelected, requestCount, targetSongCount, targetRequesterCount)
   const plansArray = Array.isArray(results) ? results : [results]
   const existingKeys = new Set(autoSchedulePlans.value.map((p) => p.songs.map((s) => s.id).sort().join(',')))
   let addedCount = 0

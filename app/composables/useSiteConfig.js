@@ -64,6 +64,7 @@ const siteConfig = ref({
   allowRegister: false,
   submissionNoteRequiresApproval: false,
   registerEmailRequired: false,
+  registerRequiresGradeClass: false,
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
 })
@@ -122,6 +123,7 @@ export const useSiteConfig = () => {
         icpNumber: '',
         gonganNumber: '',
         enableReplayRequests: false,
+        enableSubmissionRestriction: false,
         enableCollaborativeSubmission: true,
         enableSubmissionRemarks: false,
         allowOAuthRegistration: false,
@@ -142,6 +144,7 @@ export const useSiteConfig = () => {
         allowRegister: false,
         submissionNoteRequiresApproval: false,
         registerEmailRequired: false,
+        registerRequiresGradeClass: false,
         defaultTheme: 'System',
         enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight'])
       }
@@ -171,6 +174,9 @@ export const useSiteConfig = () => {
   const gonganNumber = computed(() => siteConfig.value.gonganNumber || '')
   const showBeianIcon = computed(() => siteConfig.value.showBeianIcon || false)
   const enableReplayRequests = computed(() => siteConfig.value.enableReplayRequests || false)
+  const enableSubmissionRestriction = computed(
+    () => siteConfig.value.enableSubmissionRestriction === true
+  )
   const enableCollaborativeSubmission = computed(
     () => siteConfig.value.enableCollaborativeSubmission !== false
   )
@@ -187,6 +193,9 @@ export const useSiteConfig = () => {
   const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
   const allowRegister = computed(() => siteConfig.value.allowRegister === true)
   const registerEmailRequired = computed(() => siteConfig.value.registerEmailRequired === true)
+  const registerRequiresGradeClass = computed(
+    () => siteConfig.value.registerRequiresGradeClass === true
+  )
   const submissionNoteRequiresApproval = computed(
     () => siteConfig.value.submissionNoteRequiresApproval === true
   )
@@ -264,6 +273,7 @@ export const useSiteConfig = () => {
     gonganNumber,
     showBeianIcon,
     enableReplayRequests,
+    enableSubmissionRestriction,
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
     enableSubmissionLimit,
@@ -274,6 +284,7 @@ export const useSiteConfig = () => {
     allowRegister,
     submissionNoteRequiresApproval,
     registerEmailRequired,
+    registerRequiresGradeClass,
     captchaEnabled,
     captchaProvider,
     turnstileSiteKey,

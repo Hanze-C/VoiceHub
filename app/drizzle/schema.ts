@@ -2,7 +2,7 @@ import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestam
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
-export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
+export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD', 'LANGUAGE', 'GENRE']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'pending', 'withdrawn', 'graduate', 'rejected']);
 export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
@@ -278,6 +278,8 @@ export const systemSettings = pgTable('SystemSettings', {
   oauthRegisterRequiresApproval: boolean('oauthRegisterRequiresApproval').default(true).notNull(),
   // 注册邮箱（选填→管理员开关控制；需 SMTP 已配置）
   registerEmailRequired: boolean('registerEmailRequired').default(false).notNull(),
+  // 注册时必须选择年级班级（本地注册与第三方创建账户均强制）
+  registerRequiresGradeClass: boolean('registerRequiresGradeClass').default(false).notNull(),
   // 投稿公开留言审核
   submissionNoteRequiresApproval: boolean('submissionNoteRequiresApproval').default(false).notNull(),
 
@@ -327,6 +329,10 @@ export const systemSettings = pgTable('SystemSettings', {
   // 自动备份配置
   autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
   autoBackupConfig: text('autoBackupConfig'),
+
+  // 站点统计代码（任意站点统计平台的 HTML/JS 片段，注入 SSR 页面 <head>）
+  statisticsCodeEnabled: boolean('statisticsCodeEnabled').default(false).notNull(),
+  statisticsCode: text('statisticsCode'),
 
   // 主题管理配置
   defaultTheme: text('defaultTheme').default('System').notNull(),

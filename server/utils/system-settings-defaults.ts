@@ -71,6 +71,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   registerRequiresApproval: true,
   oauthRegisterRequiresApproval: true,
   registerEmailRequired: false,
+  registerRequiresGradeClass: false,
   submissionNoteRequiresApproval: false,
   captchaEnabled: false, // 默认关闭图形验证码
   captchaMaxFailures: 3, //触发阈值
@@ -80,6 +81,9 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 自动备份
   autoBackupEnabled: false,
   autoBackupConfig: null,
+  // 站点统计代码（任意统计平台 HTML/JS 片段）
+  statisticsCodeEnabled: false,
+  statisticsCode: null,
   // 主题管理
   defaultTheme: 'System',
   enabledThemes: JSON.stringify(['System', 'ClassicDark', 'ClassicLight', 'ModernLight']),
@@ -106,6 +110,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'showBlacklistKeywords',
   'hideStudentInfo',
   'enableReplayRequests',
+  'enableSubmissionRestriction',
   'enableCollaborativeSubmission',
   'enableSubmissionRemarks',
   'enableCardCodeRequests',
@@ -120,6 +125,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'registerRequiresApproval',
   'oauthRegisterRequiresApproval',
   'registerEmailRequired',
+  'registerRequiresGradeClass',
   'submissionNoteRequiresApproval',
   'githubOAuthEnabled',
   'casdoorOAuthEnabled',

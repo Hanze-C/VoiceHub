@@ -1229,6 +1229,7 @@ export default defineEventHandler(async (event) => {
                           'allowRegister',
                           'registerRequiresApproval',
                           'registerEmailRequired',
+                          'registerRequiresGradeClass',
                           'oauthRegisterRequiresApproval',
                           'submissionNoteRequiresApproval',
                           'oauthRedirectUri',
@@ -1270,6 +1271,8 @@ export default defineEventHandler(async (event) => {
                           'turnstileSecretKey',
                           'autoBackupEnabled',
                           'autoBackupConfig',
+                          'statisticsCodeEnabled',
+                          'statisticsCode',
                           'enabledPlatforms',
                           'platformOrder'
                         ]

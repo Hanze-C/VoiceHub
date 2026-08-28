@@ -96,6 +96,32 @@
               :class="[inputClass, 'resize-none']"
             />
           </div>
+          <div class="pt-2">
+            <div
+              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
+            >
+              <div>
+                <p class="text-xs font-bold text-text-primary">{{ locale.statisticsCodeEnabled }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.statisticsCodeEnabledDesc }}</p>
+              </div>
+              <input
+                v-model="formData.statisticsCodeEnabled"
+                type="checkbox"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
+              />
+            </div>
+          </div>
+          <div>
+            <label :class="labelClass">{{ locale.statisticsCode }}</label>
+            <textarea
+              v-model="formData.statisticsCode"
+              :rows="5"
+              :placeholder="locale.statisticsCodePlaceholder"
+              :class="[inputClass, 'font-mono text-xs resize-y']"
+              :disabled="!formData.statisticsCodeEnabled"
+            />
+            <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">{{ locale.statisticsCodeHint }}</p>
+          </div>
         </div>
       </section>
 
@@ -642,6 +668,20 @@
                   class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
                 />
               </div>
+
+              <div class="flex items-center justify-between p-3 bg-bg-primary border border-border-secondary rounded-xl">
+                <div class="pr-4">
+                  <p class="text-xs font-bold text-text-primary">{{ locale.registerRequiresGradeClass }}</p>
+                  <p class="text-[10px] text-text-tertiary mt-0.5 leading-relaxed">{{ locale.registerRequiresGradeClassDesc }}</p>
+                </div>
+                <input
+                  id="register-requires-grade-class"
+                  v-model="formData.registerRequiresGradeClass"
+                  type="checkbox"
+                  :disabled="!formData.allowRegister && !formData.allowOAuthRegistration"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
+                />
+              </div>
             </div>
           </div>
 
@@ -870,6 +910,8 @@ const formData = ref({
   submissionGuidelines: '',
   icpNumber: '',
   gonganNumber: '',
+  statisticsCode: '',
+  statisticsCodeEnabled: false,
   showBeianIcon: false,
   enableCollaborativeSubmission: true,
   enableSubmissionRemarks: false,
@@ -900,6 +942,7 @@ const formData = ref({
   registerRequiresApproval: true,
   oauthRegisterRequiresApproval: true,
   registerEmailRequired: false,
+  registerRequiresGradeClass: false,
   smtpEnabled: false,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
@@ -1007,6 +1050,8 @@ const loadConfig = async () => {
       submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines.value,
       icpNumber: data.icpNumber || '',
       gonganNumber: data.gonganNumber || '',
+      statisticsCode: data.statisticsCode || '',
+      statisticsCodeEnabled: !!data.statisticsCodeEnabled,
       showBeianIcon: !!data.showBeianIcon,
       enableCollaborativeSubmission: data.enableCollaborativeSubmission !== false,
       enableSubmissionRemarks: !!data.enableSubmissionRemarks,
@@ -1038,6 +1083,7 @@ const loadConfig = async () => {
       registerRequiresApproval: data.registerRequiresApproval !== false,
       oauthRegisterRequiresApproval: data.oauthRegisterRequiresApproval !== false,
       registerEmailRequired: data.registerEmailRequired === true,
+      registerRequiresGradeClass: data.registerRequiresGradeClass === true,
       smtpEnabled: !!data.smtpEnabled,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
