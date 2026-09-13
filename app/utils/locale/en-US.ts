@@ -94,7 +94,7 @@ export const siteConfig = {
   captchaTurnstile: 'Cloudflare Turnstile',
   captchaMaxFailures: 'Failure Threshold',
   captchaMaxFailuresPlaceholder: 'e.g. 3',
-  captchaMaxFailuresDesc: 'Require CAPTCHA after this many consecutive password failures. Recommended: 3-5.',
+  captchaMaxFailuresDesc: 'Require CAPTCHA after this many consecutive password failures. Set to 0 to require CAPTCHA on every login. Recommended: 3-5.',
   turnstileSiteKey: 'Site Key',
   turnstileSiteKeyPlaceholder: 'Enter the Turnstile Site Key',
   turnstileSecretKey: 'Secret Key',
@@ -235,6 +235,7 @@ export const changePassword = {
   setNewPassword: 'Set New Password',
   changePasswordTitle: 'Change Password',
   setNewPasswordDesc: 'Create a secure password',
+  initialPasswordAccount: 'You are changing the initial password for account {0}',
   updatePasswordDesc: 'Update your login password',
   backToHome: 'Back to Home',
   logout: 'Log Out'
@@ -2114,6 +2115,7 @@ export const admin = {
       durationPlaceholder: 'e.g. 240',
       durationHint: 'Range 30–3600 sec; use the button to fetch from the platform',
       refreshDuration: 'Refresh',
+      refreshCover: 'Refresh',
       validUrl: 'Valid URL',
       saving: 'Saving...',
       saveChanges: 'Save Changes',
@@ -2260,7 +2262,8 @@ export const admin = {
       validatingPlayUrl: 'Validating play URL, please wait...',
       updateSuccess: 'Song updated',
       addSuccess: 'Song added',
-      durationRefreshed: 'Duration fetched and filled in'
+      durationRefreshed: 'Duration fetched and filled in',
+      coverRefreshed: 'Cover fetched and filled in'
     },
     errors: {
       remarkVisibilityUpdateFailed: 'Failed to update remark visibility',
@@ -2282,7 +2285,9 @@ export const admin = {
       addFailed: 'Add failed',
       durationRefreshFailed: (message: string) => `Failed to refresh duration: ${message || 'unknown error'}`,
       durationInvalidRange: 'Duration must be between 30 and 3600 seconds',
-      durationPlatformRequired: 'Fill in music platform and ID first to refresh duration'
+      durationPlatformRequired: 'Fill in music platform and ID first to refresh duration',
+      coverRefreshFailed: (message: string) => `Failed to refresh cover: ${message || 'unknown error'}`,
+      coverPlatformRequired: 'Fill in music platform and ID first to refresh cover'
     }
   },
   dataAnalysis: {
@@ -2434,7 +2439,23 @@ export const admin = {
     imageExported: 'Image exported successfully',
     imageExportFailed: (message: string) => `Image export failed: ${message}`,
     segmentedExport: (count: number) => `Segmented export complete: ${count} images`,
-    autoSegmenting: 'The schedule is too long and will be exported in sections'
+    autoSegmenting: 'The schedule is too long and will be exported in sections',
+    exportPresets: 'Export Presets',
+    presetNamePlaceholder: 'Preset name',
+    savePreset: 'Save',
+    presetSaved: 'Preset saved',
+    presetDeleted: 'Preset deleted',
+    presetNameRequired: 'Enter a preset name first',
+    presetNameDuplicated: 'A preset with this name already exists',
+    noPresetsHint: 'No presets yet. Adjust the layout settings and save one.',
+    applyPreset: 'Click to apply this preset to current settings',
+    deletePreset: 'Delete this preset',
+    batchFormatPdf: 'PDF file',
+    batchFormatImage: 'PNG image',
+    batchExportSelected: (count: number) => `Export (${count})`,
+    batchExporting: (index: number, total: number) => `Exporting ${index}/${total}`,
+    batchExportCompleted: (count: number) => `Batch export completed: ${count} files`,
+    batchExportFailed: (message: string) => `Batch export failed: ${message}`
   },
   scheduleManager: {
     jumpToday: 'Jump to today',
@@ -3840,8 +3861,10 @@ export const admin = {
         title: 'Student Scope Filter',
         currentGrade: 'Current Grade',
         currentClass: 'Current Class',
+        accountStatus: 'Account Status',
         allGrades: 'All Grades',
         allClasses: 'All Classes',
+        allStatuses: 'All Statuses',
         selectUsers: (selected: number, total: number) => `Select Users (${selected}/${total})`,
         clearSelection: 'Clear Selection',
         selectAll: 'Select All Current',
@@ -4364,6 +4387,7 @@ export const serverErrors = {
   SONG_ID_REQUIRED: 'Song ID is required',
   SONG_NOT_FOUND: 'Song not found',
   SONG_DURATION_PLATFORM_REQUIRED: 'Song missing platform or music ID, cannot retrieve duration',
+  SONG_COVER_PLATFORM_REQUIRED: 'Song missing platform or music ID, cannot retrieve cover',
   SONG_CARD_RELEASE_FAILED: 'Failed to release the request card; the withdrawal was aborted',
   SONG_NO_ACTIVE_SEMESTER_IMPORT: 'No active semester is set, so songs cannot be imported. Please ask an administrator to set an active semester first.',
   SONG_FETCH_VOTERS_FAILED: 'Failed to fetch the voter list',

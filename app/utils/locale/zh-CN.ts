@@ -103,7 +103,7 @@ export const siteConfig = {
   captchaTurnstile: 'Cloudflare Turnstile',
   captchaMaxFailures: '触发阈值（失败次数）',
   captchaMaxFailuresPlaceholder: '例如: 3',
-  captchaMaxFailuresDesc: '连续密码错误达到此次数后，后续登录必须输入验证码。建议设置为 3-5 次。',
+  captchaMaxFailuresDesc: '连续密码错误达到此次数后，后续登录必须输入验证码。设置为 0 表示每次登录均需验证码。建议设置为 3-5 次。',
   turnstileSiteKey: 'Site Key (Sitekey)',
   turnstileSiteKeyPlaceholder: '在此输入 Turnstile 的 Site Key',
   turnstileSecretKey: 'Secret Key (Secret)',
@@ -246,6 +246,7 @@ export const changePassword = {
   setNewPassword: '设置新密码',
   changePasswordTitle: '修改密码',
   setNewPasswordDesc: '请设置一个安全的密码',
+  initialPasswordAccount: '您正在修改账号 {0} 的初始密码',
   updatePasswordDesc: '更新您的登录密码',
   backToHome: '返回主页',
   logout: '退出登录'
@@ -2123,6 +2124,7 @@ export const admin = {
       durationPlaceholder: '例如: 240',
       durationHint: '取值范围 0~7200 秒（留空表示无时长信息），可通过后台校验自动验证',
       refreshDuration: '刷新',
+      refreshCover: '刷新',
       validUrl: 'URL有效',
       saving: '保存中...',
       saveChanges: '保存更改',
@@ -2269,7 +2271,8 @@ export const admin = {
       validatingPlayUrl: '正在验证播放地址URL，请稍候...',
       updateSuccess: '歌曲信息更新成功',
       addSuccess: '歌曲添加成功',
-      durationRefreshed: '时长获取成功，已自动填入'
+      durationRefreshed: '时长获取成功，已自动填入',
+      coverRefreshed: '封面获取成功，已自动填入'
     },
     errors: {
       remarkVisibilityUpdateFailed: '更新备注可见性失败',
@@ -2291,7 +2294,9 @@ export const admin = {
       addFailed: '添加失败',
       durationRefreshFailed: (message: string) => `时长刷新失败: ${message || '未知错误'}`,
       durationInvalidRange: '时长需在 30–3600 秒之间',
-      durationPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新时长'
+      durationPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新时长',
+      coverRefreshFailed: (message: string) => `封面刷新失败: ${message || '未知错误'}`,
+      coverPlatformRequired: '请先填写音乐平台和音乐ID，才能刷新封面'
     }
   },
   dataAnalysis: {
@@ -2443,7 +2448,23 @@ export const admin = {
     imageExported: '图片导出成功',
     imageExportFailed: (message: string) => `导出长图失败：${message}`,
     segmentedExport: (count: number) => `已完成分段导出，共 ${count} 张图片`,
-    autoSegmenting: '排期内容过长，将自动分段导出'
+    autoSegmenting: '排期内容过长，将自动分段导出',
+    exportPresets: '导出方案',
+    presetNamePlaceholder: '输入方案名称',
+    savePreset: '存为方案',
+    presetSaved: '方案已保存',
+    presetDeleted: '方案已删除',
+    presetNameRequired: '请先输入方案名称',
+    presetNameDuplicated: '已存在同名方案',
+    noPresetsHint: '暂无导出方案，调整排版设置后保存即可添加',
+    applyPreset: '点击应用该方案到当前设置',
+    deletePreset: '删除该方案',
+    batchFormatPdf: 'PDF 文件',
+    batchFormatImage: '长图 PNG',
+    batchExportSelected: (count: number) => `批量导出(${count})`,
+    batchExporting: (index: number, total: number) => `导出中 ${index}/${total}`,
+    batchExportCompleted: (count: number) => `批量导出完成，共 ${count} 个文件`,
+    batchExportFailed: (message: string) => `批量导出失败：${message}`
   },
   scheduleManager: {
     jumpToday: '跳转到今天',
@@ -3849,8 +3870,10 @@ export const admin = {
         title: '学生范围筛选',
         currentGrade: '当前年级',
         currentClass: '当前班级',
+        accountStatus: '账号状态',
         allGrades: '全部年级',
         allClasses: '全部班级',
+        allStatuses: '全部状态',
         selectUsers: (selected: number, total: number) => `选择用户 (${selected}/${total})`,
         clearSelection: '取消全选',
         selectAll: '选择当前全部',
@@ -4373,6 +4396,7 @@ export const serverErrors = {
   SONG_ID_REQUIRED: '歌曲ID不能为空',
   SONG_NOT_FOUND: '歌曲不存在',
   SONG_DURATION_PLATFORM_REQUIRED: '歌曲缺少平台或音乐 ID 信息，无法获取时长',
+  SONG_COVER_PLATFORM_REQUIRED: '歌曲缺少平台或音乐 ID 信息，无法获取封面',
   SONG_CARD_RELEASE_FAILED: '点歌券释放失败，撤回已终止',
   SONG_NO_ACTIVE_SEMESTER_IMPORT: '系统未设置当前活跃学期，无法导入歌曲。请联系管理员先设置活跃学期。',
   SONG_FETCH_VOTERS_FAILED: '获取投票人员列表失败',
