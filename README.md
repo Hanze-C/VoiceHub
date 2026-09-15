@@ -906,7 +906,8 @@ VoiceHub/
 │   │   ├── useTheme.ts         # 主题管理（深色/浅色/现代浅色切换）
 │   │   ├── useThemeImage.ts    # 主题图片获取
 │   │   ├── useToast.ts         # Toast提示hooks
-│   │   └── useUserFilters.ts  # 用户过滤器hooks
+│   │   ├── useUserFilters.ts  # 用户过滤器hooks
+│   │   └── useZIndex.ts        # 浮层动态层级hooks
 │   ├── drizzle/               # 数据库相关
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
@@ -986,6 +987,7 @@ VoiceHub/
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── song-name-normalize.ts # 歌曲名称归一化匹配
 │       ├── neteaseApi.ts      # 网易云音乐API
+│       ├── qqCookie.ts        # QQ音乐登录Cookie存取与续期广播
 │       ├── qqUserLibrary.ts   # QQ音乐用户资料库（歌单/最近播放）
 │       ├── oauth-register.ts  # OAuth注册工具
 │       ├── email-verification.ts # 注册邮箱验证码
@@ -1421,6 +1423,7 @@ VoiceHub/
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── cors-origin-policy.test.ts # CORS 来源协议匹配测试
+│       ├── cover-image-url.test.ts # 封面尺寸参数处理测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
 │       ├── lyric-lrc-parse.test.ts # LRC 混合精度毫秒时间戳解析测试
