@@ -730,6 +730,14 @@ const restoreBackup = async () => {
       restoreForm.value.overwriteSuperAdmin = false
     }
 
+    // 覆盖超管时，临时保留的当前管理员会占用备份记录的原ID，预留备份最大用户ID之后的新ID用于重映射
+    let maxBackupUserId = 0
+    for (const item of backupData.data.users || []) {
+      const id = Number(item?.id)
+      if (Number.isFinite(id) && id > maxBackupUserId) maxBackupUserId = id
+    }
+    const reservedUserId = maxBackupUserId > 0 ? maxBackupUserId + 1 : null
+
     let preservedSuperAdminIds = []
     let temporaryPreservedUserId = null
 
@@ -748,27 +756,44 @@ const restoreBackup = async () => {
     }
 
     const tableOrder = [
+      'musicSourcePlugins',
+      'musicSourcePluginRevisions',
+      'musicSourceConfigState',
       'users',
       'userIdentities',
       'systemSettings',
+      'gradeClass',
       'semesters',
       'playTimes',
+      'requestTimes',
+      'emailTemplates',
+      'cardCodes',
       'songs',
+      'songCollaborators',
+      'collaborationLogs',
+      'songReplayRequests',
       'scheduleSongPool',
       'votes',
       'schedules',
+      'cardCodeRedeemLogs',
       'notificationSettings',
       'notifications',
       'songBlacklist',
-      'userStatusLogs'
+      'userStatusLogs',
+      'apiKeys',
+      'apiKeyPermissions',
+      'apiLogs'
     ]
 
     const mappings = {
       users: {},
       songs: {},
+      cardCodes: {},
+      apiKeys: {},
       meta: {
         preservedSuperAdminIds,
-        temporaryPreservedUserId
+        temporaryPreservedUserId,
+        reservedUserId
       }
     }
     const CHUNK_SIZE = 50
@@ -813,6 +838,10 @@ const restoreBackup = async () => {
         if (response.newMappings) {
           if (response.newMappings.users) Object.assign(mappings.users, response.newMappings.users)
           if (response.newMappings.songs) Object.assign(mappings.songs, response.newMappings.songs)
+          // 点歌券 id 用于歌曲与兑换日志的关联重映射
+          if (response.newMappings.cardCodes) Object.assign(mappings.cardCodes, response.newMappings.cardCodes)
+          // API Key 的 id 为 uuid，用于权限与日志的关联重映射
+          if (response.newMappings.apiKeys) Object.assign(mappings.apiKeys, response.newMappings.apiKeys)
         }
         totalProcessed += chunk.length
       }
@@ -845,12 +874,18 @@ const restoreBackup = async () => {
       const restoredUserIds = Object.values(mappings.users).map((id) => Number(id))
       if (!restoredUserIds.includes(Number(temporaryPreservedUserId))) {
         restoreProgress.value = getProgressMessage('finalizingAdmin')
-        await $fetch('/api/admin/backup/clear', {
+        const finalizeResult = await $fetch('/api/admin/backup/clear', {
           method: 'POST',
           body: {
             finalizeTempUser: true
           }
         })
+        if (!finalizeResult.finalized) {
+          // 未产生新的超级管理员：保留当前账户，避免失去管理入口
+          showNotification(getMessage('restoreAdminMissing'), 'error')
+          activeModal.value = 'none'
+          return
+        }
       }
       showNotification(getMessage('restoreSuccessRelogin'), 'success')
       activeModal.value = 'none'
