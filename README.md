@@ -269,7 +269,8 @@ Podman 默认以当前用户身份运行，无需 `sudo`，安全性更高。但
 
 VoiceHub 现已支持飞牛 OS (FnOS) 的 `.fpk` 安装包。
 
-- 从 [GitHub Actions](https://github.com/laoshuikaixue/VoiceHub/actions/workflows/build-fpk.yml) 获取最新版本
+- 从 [GitHub Releases](https://github.com/laoshuikaixue/VoiceHub/releases) 获取最新版本（`.fpk` 随 Release 附带）
+- 或从 [GitHub Actions](https://github.com/laoshuikaixue/VoiceHub/actions/workflows/build-fpk.yml) 获取最新版本
 
 ### Nix / NixOS
 
@@ -719,6 +720,7 @@ VoiceHub/
 ├── .github/                   # GitHub 配置目录
 │   └── workflows/             # GitHub Actions 工作流
 │       ├── build-fpk.yml      # FnOS FPK 安装包构建
+│       ├── release.yml        # Release 发布流程
 │       ├── docker-build.yml   # Docker 镜像构建
 │       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
 │       └── nix.yml            # Nix 构建校验与 pnpmDeps 哈希同步
@@ -1013,6 +1015,7 @@ VoiceHub/
 │       ├── password-policy.ts # 统一密码策略
 │       ├── oauth.ts           # OAuth工具
 │       ├── autoSchedule.ts    # 自动排期算法
+│       ├── schedulePlayTime.ts # 排期播出时段判定（带时段排期统计）
 │       ├── timeUtils.ts       # 时间工具
 │       ├── user-archive.ts    # 账号归档判定与筛选参数解析
 │       ├── webauthn.js        # WebAuthn浏览器兼容工具

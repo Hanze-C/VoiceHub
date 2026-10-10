@@ -1307,6 +1307,7 @@ export const pages = {
     originalLinkOpened: 'The original link was opened',
     fallbackSource: 'The current link is invalid. Switched to a fallback source.',
     consecutiveFailures: 'Several songs failed to play. Autoplay has stopped.',
+    networkOffline: 'Network disconnected. Check your connection and try again.',
     bilibiliSkipped: 'The Bilibili video failed to play and was skipped',
     pluginExcluded: 'Source plugin is excluded',
     pluginInvalidUrl: 'Source plugin returned an invalid playback link',
@@ -2575,6 +2576,8 @@ export const admin = {
     loadingTitle: 'Loading schedule data',
     loadingMessage: 'Please wait...',
     pendingSongs: 'Pending Songs',
+    platformSource: 'Source platform',
+    requesterStats: '{0} submitted · {1} played',
     poolList: 'Backup List',
     poolItemName: 'backup songs',
     addAllPending: 'Move all pending songs to backup pool',
@@ -2773,7 +2776,14 @@ export const admin = {
       publishScheduleTitle: 'Publish Schedule',
       publishScheduleMessage: 'Publish the current schedule? It will be visible immediately and notifications will be sent.',
       publishDraftTitle: 'Publish Draft',
-      publishDraftMessage: (title: string) => `Publish draft "${title}"? It will be visible immediately and notifications will be sent.`
+      publishDraftMessage: (title: string) => `Publish draft "${title}"? It will be visible immediately and notifications will be sent.`,
+      unspecifiedPlayTimeTitle: 'No Play Time Selected',
+      unspecifiedPlayTimePublishWarning: (count: number) =>
+        `No play time is selected. ${count} schedule${count === 1 ? '' : 's'} on this date have a play time. Continuing will merge all schedules for the day into an all-day schedule and discard their play time info. To keep it, cancel and select a play time first.`,
+      unspecifiedPlayTimeDraftWarning: (count: number) =>
+        `No play time is selected. ${count} schedule${count === 1 ? '' : 's'} on this date have a play time. Continuing will save all schedules for the day (including published ones) as all-day drafts, remove published schedules from the public schedule, and discard their play time info. To keep it, cancel and select a play time first.`,
+      unspecifiedPlayTimePublishConfirm: 'Publish Anyway',
+      unspecifiedPlayTimeDraftConfirm: 'Save Anyway'
     },
     messages: {
       remarkVisibilityUpdated: 'Remark visibility updated',
@@ -4604,6 +4614,13 @@ export const serverErrors = {
   SETTINGS_ESA_CAPTCHA_CREDENTIALS_MISSING: 'Configure the Identity before switching to Alibaba Cloud ESA AI CAPTCHA',
   SETTINGS_ESA_CAPTCHA_SCENE_INVALID: 'Invalid Scene ID rules: each rule needs an endpoint, a domain and a Scene ID, and domains must be unique within the same endpoint',
   SETTINGS_ESA_CAPTCHA_SCENE_MISSING: 'Configure a Scene ID for the login endpoint; when registration is open, a Scene ID for the registration endpoint is also required, or close the registration entry first',
+  SETTINGS_LEGAL_CONSENT_DATE_MISSING: 'A terms update date is required when consent confirmation is enabled',
+  SETTINGS_LEGAL_CONSENT_DOC_INVALID: 'Invalid legal document configuration',
+  SETTINGS_LEGAL_CONSENT_DOC_EMPTY: 'At least one legal document is required when consent confirmation is enabled',
+  SETTINGS_LEGAL_CONSENT_DOC_NAME_MISSING: 'Legal document name cannot be empty',
+  SETTINGS_LEGAL_CONSENT_DOC_CONTENT_MISSING: 'Content of legal document “{0}” cannot be empty',
+  SETTINGS_LEGAL_CONSENT_DOC_SLUG_INVALID: 'Identifier of legal document “{0}” may only contain letters, numbers, underscores and hyphens',
+  SETTINGS_LEGAL_CONSENT_DOC_SLUG_DUPLICATE: 'Legal document identifiers must be unique',
   BILIBILI_PLAYURL_FAILED: 'Failed to fetch Bilibili audio link',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: 'Name, username, and password are required',
   AUTH_USERNAME_LENGTH_INVALID: 'Username must be between 3 and 30 characters',

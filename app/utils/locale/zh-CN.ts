@@ -1318,6 +1318,7 @@ export const pages = {
     originalLinkOpened: '已为你打开原始链接',
     fallbackSource: '当前播放链接无效，已切换备用音源',
     consecutiveFailures: '连续多首歌曲播放失败，已停止自动播放',
+    networkOffline: '网络连接已断开，请检查网络后重试',
     bilibiliSkipped: '哔哩哔哩视频播放失败，自动跳过',
     pluginExcluded: '插件音源已排除',
     pluginInvalidUrl: '插件音源返回的播放链接无效',
@@ -2584,6 +2585,8 @@ export const admin = {
     loadingTitle: '正在加载排期数据',
     loadingMessage: '请稍候...',
     pendingSongs: '待排歌曲',
+    platformSource: '投稿平台',
+    requesterStats: '投稿 {0} 次 · 播出 {1} 次',
     poolList: '备选列表',
     poolItemName: '备选歌曲',
     addAllPending: '将全部待排歌曲移入备选池',
@@ -2782,7 +2785,14 @@ export const admin = {
       publishScheduleTitle: '发布排期',
       publishScheduleMessage: '确定要发布当前排期吗？发布后将立即公示并发送通知。',
       publishDraftTitle: '发布草稿',
-      publishDraftMessage: (title: string) => `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`
+      publishDraftMessage: (title: string) => `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`,
+      unspecifiedPlayTimeTitle: '未选择播出时段',
+      unspecifiedPlayTimePublishWarning: (count: number) =>
+        `当前未选择播出时段，当天已有 ${count} 条排期设置了播出时段。继续发布会将当天所有排期合并为全天排期，原有播出时段信息将丢失。如需保留，请先取消并选择对应播出时段。`,
+      unspecifiedPlayTimeDraftWarning: (count: number) =>
+        `当前未选择播出时段，当天已有 ${count} 条排期设置了播出时段。继续保存草稿会将当天所有排期（含已发布排期）转为全天草稿，已发布排期会从公开排期移除，原有播出时段信息将丢失。如需保留，请先取消并选择对应播出时段。`,
+      unspecifiedPlayTimePublishConfirm: '仍要发布',
+      unspecifiedPlayTimeDraftConfirm: '仍要保存'
     },
     messages: {
       remarkVisibilityUpdated: '备注留言可见性已更新',
@@ -4613,6 +4623,13 @@ export const serverErrors = {
   SETTINGS_ESA_CAPTCHA_CREDENTIALS_MISSING: '请先配置阿里云 ESA AI 验证码的身份标，再切换到该验证类型',
   SETTINGS_ESA_CAPTCHA_SCENE_INVALID: '场景 ID 规则格式无效，每条规则需选择接口、填写域名与场景 ID，且同一接口下域名不可重复',
   SETTINGS_ESA_CAPTCHA_SCENE_MISSING: '请先为登录接口配置场景 ID；开启用户注册时还需为注册接口配置场景 ID，或先关闭注册入口',
+  SETTINGS_LEGAL_CONSENT_DATE_MISSING: '启用条款确认时必须填写条款更新日期',
+  SETTINGS_LEGAL_CONSENT_DOC_INVALID: '协议文档配置无效',
+  SETTINGS_LEGAL_CONSENT_DOC_EMPTY: '启用条款确认时至少需要配置一份协议文档',
+  SETTINGS_LEGAL_CONSENT_DOC_NAME_MISSING: '协议文档名称不能为空',
+  SETTINGS_LEGAL_CONSENT_DOC_CONTENT_MISSING: '协议文档「{0}」的内容不能为空',
+  SETTINGS_LEGAL_CONSENT_DOC_SLUG_INVALID: '协议文档「{0}」的标识只能包含字母、数字、下划线和连字符',
+  SETTINGS_LEGAL_CONSENT_DOC_SLUG_DUPLICATE: '协议文档标识不能重复',
   BILIBILI_PLAYURL_FAILED: '获取 Bilibili 音频链接失败',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: '姓名、用户名、密码不能为空',
   AUTH_USERNAME_LENGTH_INVALID: '用户名长度需要在3-30个字符之间',
