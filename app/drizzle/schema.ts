@@ -100,6 +100,8 @@ export const songs = pgTable('Song', {
   title: text('title').notNull(),
   artist: text('artist').notNull(),
   requesterId: integer('requesterId').notNull(),
+  // 逐条投稿的匿名标记：true = 对其他同学显示「匿名投稿」（管理员与投稿人本人仍可见真实姓名）
+  submissionAnonymous: boolean('submissionAnonymous').default(false).notNull(),
   played: boolean('played').default(false).notNull(),
   playedAt: timestamp('playedAt').defaultNow(),
   semester: text('semester'),
@@ -119,6 +121,8 @@ export const songs = pgTable('Song', {
 }, (table) => [
   index('song_card_code_id_idx').on(table.cardCodeId),
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
+  // 全站投稿总量限额只按 createdAt 窗口计数，缺少以 createdAt 为前导列的索引会退化成全表扫
+  index('song_created_at_idx').on(table.createdAt),
   index('song_requester_id_idx').on(table.requesterId)
 ]);
 
@@ -314,6 +318,11 @@ export const systemSettings = pgTable('SystemSettings', {
   dailySubmissionLimit: integer('dailySubmissionLimit'),
   weeklySubmissionLimit: integer('weeklySubmissionLimit'),
   monthlySubmissionLimit: integer('monthlySubmissionLimit'),
+  // 全站投稿总量上限（按北京时间周期统计所有用户），三个周期可同时生效
+  enableGlobalSubmissionLimit: boolean('enableGlobalSubmissionLimit').default(false).notNull(),
+  globalDailySubmissionLimit: integer('globalDailySubmissionLimit'),
+  globalWeeklySubmissionLimit: integer('globalWeeklySubmissionLimit'),
+  globalMonthlySubmissionLimit: integer('globalMonthlySubmissionLimit'),
   // 用户可见播出排期范围
   scheduleDaysBeforeEnabled: boolean('scheduleDaysBeforeEnabled').default(false).notNull(),
   scheduleDaysBefore: integer('scheduleDaysBefore').default(1).notNull(),
@@ -321,6 +330,8 @@ export const systemSettings = pgTable('SystemSettings', {
   scheduleDaysAfter: integer('scheduleDaysAfter').default(1).notNull(),
   showBlacklistKeywords: boolean('showBlacklistKeywords').default(false).notNull(),
   hideStudentInfo: boolean('hideStudentInfo').default(true).notNull(),
+  // 是否允许投稿人逐条选择匿名投稿（默认关闭）
+  allowAnonymousSubmission: boolean('allowAnonymousSubmission').default(false).notNull(),
   // SMTP 邮件配置
   smtpEnabled: boolean('smtpEnabled').default(false).notNull(),
   smtpHost: text('smtpHost'),

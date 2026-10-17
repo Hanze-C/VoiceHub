@@ -237,6 +237,16 @@ export default defineEventHandler(async (event) => {
       updateData.hideStudentInfo = body.hideStudentInfo
     }
 
+    if (body.allowAnonymousSubmission !== undefined) {
+      if (typeof body.allowAnonymousSubmission !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'allowAnonymousSubmission 必须是布尔值'
+        })
+      }
+      updateData.allowAnonymousSubmission = body.allowAnonymousSubmission
+    }
+
     if (body.enablePlayTimeSelection !== undefined) {
       if (typeof body.enablePlayTimeSelection !== 'boolean') {
         throw createError({
@@ -366,6 +376,16 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionLimit = body.enableSubmissionLimit
     }
 
+    if (body.enableGlobalSubmissionLimit !== undefined) {
+      if (typeof body.enableGlobalSubmissionLimit !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableGlobalSubmissionLimit 必须是布尔值'
+        })
+      }
+      updateData.enableGlobalSubmissionLimit = body.enableGlobalSubmissionLimit
+    }
+
     // 点歌券点歌相关设置
     if (body.enableCardCodeRequests !== undefined) {
       if (typeof body.enableCardCodeRequests !== 'boolean') {
@@ -485,6 +505,22 @@ export default defineEventHandler(async (event) => {
         })
       }
       updateData.monthlySubmissionLimit = body.monthlySubmissionLimit
+    }
+
+    // 全站总量限额的三个周期可叠加生效，各自独立校验
+    for (const field of [
+      'globalDailySubmissionLimit',
+      'globalWeeklySubmissionLimit',
+      'globalMonthlySubmissionLimit'
+    ] as const) {
+      if (body[field] === undefined) continue
+      if (body[field] !== null && (!Number.isInteger(body[field]) || body[field] < 0)) {
+        throw createError({
+          statusCode: 400,
+          message: `${field} 必须是非负整数或null`
+        })
+      }
+      updateData[field] = body[field]
     }
 
     if (body.scheduleDaysBeforeEnabled !== undefined) {
@@ -642,26 +678,12 @@ export default defineEventHandler(async (event) => {
         )
       }
 
-      // 一条 ESA 规则只覆盖一个接口，登录接口无场景 ID 时登录页无法初始化验证码
-      if (!nextEsaCaptchaScenes.some((scene) => scene.endpoint === 'login')) {
+      // 验证码统一走公共验证接口 /api/captcha/verify，无任何场景 ID 时前端无法初始化验证码
+      if (nextEsaCaptchaScenes.length === 0) {
         throw createApiError(
           400,
           SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_SCENE_MISSING,
-          '启用阿里云 ESA AI 验证码前，请先为登录接口配置场景 ID'
-        )
-      }
-
-      // 注册入口开启时，注册接口需有自己独立的 ESA 规则与场景 ID
-      const nextAllowRegister =
-        body.allowRegister !== undefined ? body.allowRegister : settings?.allowRegister
-      if (
-        nextAllowRegister === true &&
-        !nextEsaCaptchaScenes.some((scene) => scene.endpoint === 'register')
-      ) {
-        throw createApiError(
-          400,
-          SERVER_ERROR_CODES.SETTINGS_ESA_CAPTCHA_SCENE_MISSING,
-          '开放用户注册时，请为注册接口配置场景 ID，或先关闭注册入口'
+          '启用阿里云 ESA AI 验证码前，请先为公共验证接口配置至少一个场景 ID'
         )
       }
     }

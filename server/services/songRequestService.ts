@@ -17,8 +17,11 @@ import { createApiError } from '~~/server/utils/apiError'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import {
+  findReachedGlobalSubmissionLimit,
+  getActiveGlobalSubmissionLimits,
   isCardCodeLimitBypassActive,
-  isLimitReached
+  isLimitReached,
+  type LimitType
 } from '~~/server/utils/submissionLimit'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
@@ -57,6 +60,7 @@ const songRequestBodySchema = z.object({
   // 保持「站点表单 / 机器人 / zod」三处同一个数值
   submissionNote: z.string().trim().max(SUBMISSION_NOTE_MAX_LENGTH, `备注留言不能超过${SUBMISSION_NOTE_MAX_LENGTH}个字符`).optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
+  submissionAnonymous: z.boolean().optional(),
   preferredPlayTimeId: z.preprocess(
     (value) => value === null || value === undefined || value === '' ? null : Number(value),
     z.number().int().positive('播出时段 ID 无效').nullable()
@@ -363,6 +367,19 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         ? SUBMISSION_NOTE_STATUS.PENDING
         : null
 
+    // 匿名投稿：站点未开启总开关时强制视为实名（防绕过）；开启时按用户勾选。
+    // 匿名投稿不允许联合投稿。
+    const submissionAnonymous =
+      systemSettingsData?.allowAnonymousSubmission === true &&
+      requestBody.submissionAnonymous === true
+    if (submissionAnonymous && requestBody.collaborators?.length) {
+      throw createApiError(
+        400,
+        SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+        '匿名投稿不支持联合投稿'
+      )
+    }
+
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
     const song = await db.transaction(async (tx) => {
@@ -432,6 +449,33 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         }
       }
 
+      // 全站投稿总量限额：对所有用户合计计数，管理员豁免
+      // 先解析生效周期，三值全空（无周期可拦）时跳过，避免零收益的全站串行加锁
+      if (!isAdmin && getActiveGlobalSubmissionLimits(systemSettingsData).length > 0) {
+        // 全局计数必须串行，否则并发请求会读到相同计数并同时越过上限
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('global_submission_limit'))`)
+
+        const reachedLimit = await findReachedGlobalSubmissionLimit(
+          tx as any,
+          systemSettingsData
+        )
+
+        if (reachedLimit) {
+          const codeMap: Record<LimitType, string> = {
+            daily: SERVER_ERROR_CODES.SONG_GLOBAL_DAILY_LIMIT_REACHED,
+            weekly: SERVER_ERROR_CODES.SONG_GLOBAL_WEEKLY_LIMIT_REACHED,
+            monthly: SERVER_ERROR_CODES.SONG_GLOBAL_MONTHLY_LIMIT_REACHED
+          }
+
+          throw createApiError(
+            403,
+            codeMap[reachedLimit.type],
+            `全站投稿总量已达上限（${reachedLimit.limit} 首）`,
+            { params: [reachedLimit.limit] }
+          )
+        }
+      }
+
       if (hitRequestTime) {
         const latestRequestTimeResult = await tx
           .select()
@@ -497,6 +541,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           durationSeconds: requestBody.durationSeconds || null,
           submissionNote,
           submissionNotePublic,
+          submissionAnonymous,
           submissionNotePublicStatus,
           hitRequestId: hitRequestTime?.id || null
         })
@@ -618,7 +663,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     try {
       const [requester] = await db.select({ name: users.name, username: users.username })
         .from(users).where(eq(users.id, user.id)).limit(1)
-      const displayName = requester?.name || requester?.username || `用户 ${user.id}`
+      // 匿名投稿不在群聊推送里暴露真实姓名
+      const displayName =
+        song.submissionAnonymous === true
+          ? '匿名投稿'
+          : (requester?.name || requester?.username || `用户 ${user.id}`)
       await enqueueAstrbotGroupEvent(
         'songRequest',
         '新的点歌投稿',
