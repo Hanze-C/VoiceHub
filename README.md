@@ -1440,6 +1440,7 @@ VoiceHub/
 │   │   ├── astrbot-backup.ts # 四平台绑定备份恢复
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── auth-route-policy.ts # 强制改密期间的接口访问策略
+│   │   ├── backup-filename.ts # 备份文件名白名单与路径遍历校验
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
 │   │   ├── captcha.ts      # 图形验证码生成工具
 │   │   ├── captchaStore.ts # 分布式短期状态与验证码哈希存储
@@ -1478,6 +1479,8 @@ VoiceHub/
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
+│   │   ├── outbound-url.ts # 备份出站地址元数据/内部域名拦截
+│   │   ├── pagination.ts   # 分页参数解析与上限夹取
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
@@ -1486,6 +1489,7 @@ VoiceHub/
 │   │   ├── register-validation.ts # 注册校验纯函数
 │   │   ├── registration-notify.ts # 注册结果通知
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
+│   │   ├── request-captcha.ts # 图形/Turnstile/ESA 人机验证统一校验
 │   │   ├── request-utils.ts # 请求处理通用工具
 │   │   ├── requireSongAdmin.ts # 歌曲管理员权限校验工具
 │   │   ├── song-duration-policy.ts # 歌曲时长归一化与补齐/清空决策
