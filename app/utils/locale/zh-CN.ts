@@ -2635,6 +2635,10 @@ export const admin = {
       deselectAll: '取消全选',
       deleteCache: '删除缓存',
       preloadSong: '预下载此歌曲',
+      durationMismatchTip: (actual: string, recorded: string) =>
+        `实测时长 ${actual}，系统记录 ${recorded}，请检查时长`,
+      preloadDurationMismatchCount: (count: number) =>
+        `${count} 首歌曲实测时长与系统记录不一致，请检查`,
       emptySongs: '暂无歌曲',
       processProgress: '处理进度',
       downloadProgress: '下载进度',
@@ -2904,6 +2908,7 @@ export const admin = {
     replay: '重播',
     crossSemester: '跨学期',
     requesterPrefix: '投稿人：',
+    anonymousRequester: '匿名投稿',
     replayRequestsPrefix: '申请重播：',
     popularityPrefix: '热度：',
     replayCount: (count: number) => `${count}人`,

@@ -2703,6 +2703,10 @@ export const admin = {
       deselectAll: 'Deselect All',
       deleteCache: 'Delete Cache',
       preloadSong: 'Preload this song',
+      durationMismatchTip: (actual: string, recorded: string) =>
+        `Actual duration ${actual} differs from the saved ${recorded}. Please check.`,
+      preloadDurationMismatchCount: (count: number) =>
+        `${count} songs differ from the saved duration. Please check.`,
       emptySongs: 'No songs',
       processProgress: 'Processing Progress',
       downloadProgress: 'Download Progress',
@@ -2983,6 +2987,7 @@ export const admin = {
     replay: 'Replay',
     crossSemester: 'Cross-semester',
     requesterPrefix: 'Requester: ',
+    anonymousRequester: 'Anonymous',
     replayRequestsPrefix: 'Replay requests: ',
     popularityPrefix: 'Popularity: ',
     replayCount: (count: number) => `${count} people`,
