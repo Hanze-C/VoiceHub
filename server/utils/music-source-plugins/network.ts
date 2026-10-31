@@ -14,15 +14,35 @@ const ipv4CompatibleAddress = (bytes: number[]) => {
   return ipaddr.fromByteArray(bytes.slice(12), 'ipv4')
 }
 
+/** IPv4 映射与 IPv4 兼容的 IPv6 写法统一还原成 IPv4 后再判段 */
+const comparableAddress = (address: string): ipaddr.IPv4 | ipaddr.IPv6 => {
+  const ip = ipaddr.parse(address)
+  if (ip.kind() !== 'ipv6') return ip
+  const ipv6 = ip as ipaddr.IPv6
+  const embedded = ipv6.isIPv4MappedAddress() ? ipv6.toIPv4Address() : ipv4CompatibleAddress(ipv6.toByteArray())
+  return embedded && embedded.kind() === 'ipv4' ? (embedded as ipaddr.IPv4) : ipv6
+}
+
 export function publicAddress(address: string): boolean {
-  try {
-    let ip: ipaddr.IPv4 | ipaddr.IPv6 = ipaddr.parse(address)
-    if (ip.kind() === 'ipv6') {
-      const embedded = ip.isIPv4MappedAddress() ? ip.toIPv4Address() : ipv4CompatibleAddress(ip.toByteArray())
-      if (embedded && embedded.kind() === 'ipv4') ip = embedded
-    }
-    return ip.range() === 'unicast'
-  } catch { return false }
+  try { return comparableAddress(address).range() === 'unicast' } catch { return false }
+}
+
+// 任何场景都禁止服务端访问的地址段：云元数据端点落在链路本地段，其余段要么不可达要么为保留用途。
+// 与 publicAddress 的区别：私网/回环等地址在备份目标等场景允许，此处只拦绝对不可接受的段。
+const UNACCEPTABLE_RANGES: ReadonlySet<string> = new Set([
+  'linkLocal',
+  'multicast',
+  'broadcast',
+  'limitedBroadcast',
+  'unspecified',
+  'reserved',
+  'deprecated',
+  'benchmarking',
+  'as112'
+])
+
+export function unacceptableAddress(address: string): boolean {
+  try { return UNACCEPTABLE_RANGES.has(comparableAddress(address).range()) } catch { return true }
 }
 
 export function networkUrl(input: string): URL {
@@ -59,6 +79,13 @@ export interface NetworkOptions {
   signal: AbortSignal
 }
 
+declare module 'node:http' {
+  interface IncomingMessage {
+    /** openNetwork 走完重定向链后的终点 URL，供 serverless 302 直跳使用 */
+    finalUrl?: string
+  }
+}
+
 /** 连接固定到已校验的 DNS 结果，重定向每跳重新校验。 */
 export async function openNetwork(input: string, options: NetworkOptions): Promise<IncomingMessage> {
   let url = networkUrl(input)
@@ -85,7 +112,10 @@ export async function openNetwork(input: string, options: NetworkOptions): Promi
       request.on('error', reject)
       request.end(body)
     })
-    if (![301, 302, 303, 307, 308].includes(response.statusCode || 0) || !response.headers.location) return response
+    if (![301, 302, 303, 307, 308].includes(response.statusCode || 0) || !response.headers.location) {
+      response.finalUrl = url.href
+      return response
+    }
     response.destroy()
     if (hop === MUSIC_PLUGIN_LIMITS.redirects) throw pluginError('PLUGIN_NETWORK_BLOCKED')
     const next = networkUrl(new URL(response.headers.location, url).href)
@@ -96,6 +126,27 @@ export async function openNetwork(input: string, options: NetworkOptions): Promi
     url = next
   }
   throw pluginError('PLUGIN_NETWORK_BLOCKED')
+}
+
+/**
+ * 走完重定向链解析终点 URL 后即断开，不读取响应体。
+ * HEAD 结果仅在 2xx/416 时可直接采信，其余（含 403/405 等拒绝码）回退 GET 探测；拿不到终点返回 null
+ */
+export async function probeFinalUrl(input: string, options: NetworkOptions): Promise<{ url: string; status: number } | null> {
+  const attempt = async (method: string) => {
+    const response = await openNetwork(input, { ...options, method })
+    const final = response.finalUrl || input
+    const status = response.statusCode || 0
+    response.destroy()
+    return { url: final, status }
+  }
+  try {
+    const head = await attempt('HEAD')
+    if ((head.status >= 200 && head.status < 300) || head.status === 416) return head
+    return await attempt('GET')
+  } catch {
+    try { return await attempt('GET') } catch { return null }
+  }
 }
 
 export async function requestNetwork(input: string, options: NetworkOptions, limit: number = MUSIC_PLUGIN_LIMITS.responseBytes) {

@@ -132,6 +132,8 @@ export const SERVER_ERROR_CODES = {
   THEME_INVALID_LIST: 'THEME_INVALID_LIST',
   THEME_INVALID_DEFAULT: 'THEME_INVALID_DEFAULT',
   THEME_SYSTEM_REQUIRES_CLASSIC: 'THEME_SYSTEM_REQUIRES_CLASSIC',
+  SETTINGS_CUSTOM_CSS_TOO_LONG: 'SETTINGS_CUSTOM_CSS_TOO_LONG',
+  SETTINGS_CUSTOM_CSS_STYLE_CLOSER: 'SETTINGS_CUSTOM_CSS_STYLE_CLOSER',
   SETTINGS_GRADE_CLASS_OPTIONS_MISSING: 'SETTINGS_GRADE_CLASS_OPTIONS_MISSING',
   SETTINGS_CAPTCHA_PROVIDER_INVALID: 'SETTINGS_CAPTCHA_PROVIDER_INVALID',
   SETTINGS_ESA_CAPTCHA_CREDENTIALS_MISSING: 'SETTINGS_ESA_CAPTCHA_CREDENTIALS_MISSING',
@@ -549,6 +551,13 @@ export const MUSIC_PLUGIN_LIMITS = {
   requests: 12,
   redirects: 4,
   concurrency: 2,
+  // 插件音源媒体代理总时长（自托管长流），同时作为解析端 ticket 的有效期
+  mediaProxyMs: 30 * 60 * 1000,
+  // serverless 媒体代理兜底时长，必须小于 Vercel 函数 maxDuration（30s），
+  // 主动超时后客户端用 Range 续播，避免平台强杀产生重试风暴
+  mediaProxyServerlessMs: 25_000,
+  // 插件音源媒体回源探测（解析重定向链）的单次超时
+  mediaProbeMs: 10_000,
   // serverless 部署快照（prelude + 全部插件脚本）的解码后总量上限，超出会在构建期终止部署
   snapshotBytes: 24 * 1024 * 1024
 } as const

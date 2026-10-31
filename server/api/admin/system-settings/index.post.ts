@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
+import { findSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import { isValidAstrbotWeeklyConfigInput, normalizeAstrbotWeeklyConfig } from '~~/server/utils/astrbot-weekly-config'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import { isAstrbotPullMode } from '~~/server/utils/astrbot-pull'
@@ -13,6 +14,7 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
+import { CUSTOM_CSS_MAX_LENGTH, containsStyleCloser, trimCustomCss } from '~/utils/custom-css-policy'
 import {
   SERVER_ERROR_CODES,
   MUSIC_SOURCE_PLATFORMS,
@@ -194,6 +196,18 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
 
+    // 用户数据、凭据与出站目标类配置仅超级管理员可修改
+    if (user.role !== 'SUPER_ADMIN') {
+      const rejectedFields = findSuperAdminOnlySettingFields(body)
+      if (rejectedFields.length > 0) {
+        console.warn('[SystemSettings] 普通管理员提交超管专属配置已拒绝:', rejectedFields.join(', '))
+        throw createError({
+          statusCode: 403,
+          message: '只有超级管理员可以修改用户数据与凭据相关的配置'
+        })
+      }
+    }
+
     // 验证请求体
     const updateData: any = {}
 
@@ -202,19 +216,14 @@ export default defineEventHandler(async (event) => {
     let settings = settingsResult[0]
 
     if (body.defaultTheme !== undefined || body.enabledThemes !== undefined) {
-      if (user.role !== 'SUPER_ADMIN') {
-        // 主题设置仅超级管理员可修改：普通管理员请求剥离主题字段，其余配置照常处理
-        delete body.defaultTheme
-        delete body.enabledThemes
-      } else {
-        const enabledThemes = body.enabledThemes !== undefined
-          ? validateThemeConfig(body.defaultTheme ?? settings?.defaultTheme ?? 'System', body.enabledThemes)
-          : parseThemeArray(settings?.enabledThemes, DEFAULT_THEMES)
-        const defaultTheme = body.defaultTheme !== undefined ? body.defaultTheme : settings?.defaultTheme || 'System'
-        validateThemeConfig(defaultTheme, JSON.stringify(enabledThemes))
-        if (body.defaultTheme !== undefined) updateData.defaultTheme = defaultTheme
-        updateData.enabledThemes = JSON.stringify(enabledThemes)
-      }
+      // 普通管理员提交主题字段已由上方守卫拦截，此处仅处理超级管理员请求
+      const enabledThemes = body.enabledThemes !== undefined
+        ? validateThemeConfig(body.defaultTheme ?? settings?.defaultTheme ?? 'System', body.enabledThemes)
+        : parseThemeArray(settings?.enabledThemes, DEFAULT_THEMES)
+      const defaultTheme = body.defaultTheme !== undefined ? body.defaultTheme : settings?.defaultTheme || 'System'
+      validateThemeConfig(defaultTheme, JSON.stringify(enabledThemes))
+      if (body.defaultTheme !== undefined) updateData.defaultTheme = defaultTheme
+      updateData.enabledThemes = JSON.stringify(enabledThemes)
     }
 
     if (body.telemetryEnabled !== undefined) {
@@ -321,6 +330,29 @@ export default defineEventHandler(async (event) => {
       updateData.statisticsCode = body.statisticsCode
     }
 
+    if (body.customCss !== undefined) {
+      if (body.customCss !== null && typeof body.customCss !== 'string') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'customCss 必须是字符串或 null')
+      }
+      const css = trimCustomCss(body.customCss)
+      if (css.length > CUSTOM_CSS_MAX_LENGTH) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_CUSTOM_CSS_TOO_LONG,
+          `自定义 CSS 不能超过 ${CUSTOM_CSS_MAX_LENGTH} 个字符`,
+          { params: [CUSTOM_CSS_MAX_LENGTH] }
+        )
+      }
+      if (containsStyleCloser(css)) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_CUSTOM_CSS_STYLE_CLOSER,
+          '自定义 CSS 不允许包含 </style>'
+        )
+      }
+      updateData.customCss = css || null
+    }
+
     if (body.legalConsentEnabled !== undefined) {
       if (typeof body.legalConsentEnabled !== 'boolean') throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '条款确认开关必须是布尔值')
       updateData.legalConsentEnabled = body.legalConsentEnabled
@@ -379,6 +411,13 @@ export default defineEventHandler(async (event) => {
         throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'statisticsCodeEnabled 必须是布尔值')
       }
       updateData.statisticsCodeEnabled = body.statisticsCodeEnabled
+    }
+
+    if (body.customCssEnabled !== undefined) {
+      if (typeof body.customCssEnabled !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'customCssEnabled 必须是布尔值')
+      }
+      updateData.customCssEnabled = body.customCssEnabled
     }
 
     if (body.showBeianIcon !== undefined) {
