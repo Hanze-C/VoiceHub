@@ -107,6 +107,8 @@ export async function fetchSafeOutbound(
     headers?: Record<string, string>
     body?: string | Uint8Array
     signal?: AbortSignal
+    /** 响应体上限，默认 1 MB；仅读取备份正文这类已知大体积目标显式放宽 */
+    maxBytes?: number
   }
 ): Promise<Response> {
   await assertSafeOutboundUrl(input)
@@ -119,13 +121,14 @@ export async function fetchSafeOutbound(
       headers: { 'accept-encoding': 'identity', ...options.headers },
       signal,
       agent: false,
-      lookup: ((host: string, settings: { all?: boolean }, callback: (...args: any[]) => void) => {
+      lookup: ((host: string, settings: { all?: boolean }, callback: (...args: unknown[]) => void) => {
         lookup(host, { all: true, verbatim: true }).then((addresses) => {
           signal.throwIfAborted()
-          if (!addresses.length) throw new Error('备份目标 DNS 未返回地址')
+          const address = addresses[0]
+          if (!address) throw new Error('备份目标 DNS 未返回地址')
           assertResolvedOutboundAddresses(addresses.map((item) => item.address))
           if (settings?.all) callback(null, addresses)
-          else callback(null, addresses[0].address, addresses[0].family)
+          else callback(null, address.address, address.family)
         }).catch(callback)
       }) as NonNullable<http.RequestOptions['lookup']>
     }, resolve)
@@ -140,9 +143,10 @@ export async function fetchSafeOutbound(
     }
     const chunks: Buffer[] = []
     let size = 0
+    const maxBytes = options.maxBytes && options.maxBytes > 0 ? options.maxBytes : 1024 * 1024
     for await (const chunk of response) {
       size += chunk.length
-      if (size > 1024 * 1024) throw new Error('备份目标响应超过大小限制')
+      if (size > maxBytes) throw new Error('备份目标响应超过大小限制')
       chunks.push(Buffer.from(chunk))
     }
     signal.throwIfAborted()

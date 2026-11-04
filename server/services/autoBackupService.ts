@@ -7,6 +7,7 @@ import {
   apiKeyPermissions,
   apiLogs,
   cardCodeRedeemLogs,
+  cardCodeAssignments,
   cardCodes,
   collaborationLogs,
   emailTemplates,
@@ -27,9 +28,12 @@ import {
   votes
 } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, type GitApiMode } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
+import { buildBackupCommitMessage, buildRepoFilePath, commitBackupFile } from '~~/server/utils/githubGitClient'
 import { fetchSafeOutbound } from '~~/server/utils/outbound-url'
+import { getServerDate } from '~~/server/utils/serverTime'
+import { maskSystemSettingsSecrets, omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-settings/secretMask'
 import { desc, eq, lt, sql } from 'drizzle-orm'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 
@@ -70,6 +74,15 @@ export interface AutoBackupConfig {
       username: string
       password: string
       path: string
+    }
+    github: {
+      enabled: boolean
+      apiBase: string
+      repo: string
+      branch: string
+      path: string
+      token: string
+      apiMode?: GitApiMode
     }
     telegram: {
       enabled: boolean
@@ -114,9 +127,9 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
   const backupData = {
     metadata: {
       version: '1.0',
-      timestamp: new Date().toISOString(),
+      timestamp: getServerDate().toISOString(),
       backupType: 'auto',
-      description: `自动备份 - ${new Date().toISOString()}`,
+      description: `自动备份 - ${getServerDate().toISOString()}`,
       tables: [] as Array<{ name: string; description: string; recordCount: number }>,
       totalRecords: 0
     },
@@ -137,6 +150,7 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
     songBlacklist: { query: () => db.select().from(songBlacklists), description: '歌曲黑名单' },
     votes: { query: () => db.select().from(votes), description: '投票数据' },
     cardCodes: { query: () => db.select().from(cardCodes), description: '点歌券数据' },
+    cardCodeAssignments: { query: () => db.select().from(cardCodeAssignments), description: '点歌券派发记录' },
     cardCodeRedeemLogs: { query: () => db.select().from(cardCodeRedeemLogs), description: '点歌券日志' },
     songCollaborators: { query: () => db.select().from(songCollaborators), description: '联合投稿人' },
     collaborationLogs: { query: () => db.select().from(collaborationLogs), description: '联合投稿审计日志' },
@@ -150,16 +164,7 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
     systemSettings: {
       query: async () => {
         const rows = await db.select().from(systemSettings)
-        // 脱敏：移除敏感凭据字段，避免备份文件泄露密钥
-        const SENSITIVE_FIELDS = [
-          'smtpPassword', 'oauthStateSecret', 'githubClientSecret',
-          'casdoorClientSecret', 'googleClientSecret', 'customOAuthClientSecret',
-          'turnstileSecretKey', 'aggregateOAuthAppKey', 'autoBackupConfig'
-        ]
-        return rows.map(row => {
-          const entries = Object.entries(row).filter(([k]) => !SENSITIVE_FIELDS.includes(k))
-          return Object.fromEntries(entries)
-        })
+        return rows.map(row => omitMaskedSystemSettingsSecrets(maskSystemSettingsSecrets(row)))
       },
       description: '系统设置（已脱敏）'
     }
@@ -181,7 +186,7 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
 
   backupData.metadata.totalRecords = totalRecords
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const timestamp = getServerDate().toISOString().replace(/[:.]/g, '-')
   const filename = `auto-backup-${timestamp}.json`
 
   return { json: JSON.stringify(backupData, null, 2), filename, metadata: backupData.metadata }
@@ -252,6 +257,13 @@ async function doWebDAVUpload(config: AutoBackupConfig['methods']['webdav'], dat
   console.log(`WebDAV 上传完成: ${filename}`)
 }
 
+/** 提交备份文件到 Git 仓库分支 */
+async function doGithubUpload(config: AutoBackupConfig['methods']['github'], data: string, filename: string): Promise<void> {
+  const filePath = buildRepoFilePath(config.path, filename)
+  await commitBackupFile(config, filePath, data, buildBackupCommitMessage(filename))
+  console.log(`Git 仓库提交完成: ${filePath}`)
+}
+
 /** 导出 ensureWebDAVDir 供测试端点使用 */
 export { ensureWebDAVDir }
 
@@ -261,7 +273,7 @@ async function doTelegramSend(config: AutoBackupConfig['methods']['telegram'], d
   const blob = new Blob([data], { type: 'application/json' })
   formData.append('chat_id', config.chatId)
   formData.append('document', blob, filename)
-  formData.append('caption', `VoiceHub Auto Backup - ${new Date().toISOString()}`)
+  formData.append('caption', `VoiceHub Auto Backup - ${getServerDate().toISOString()}`)
 
   const response = await fetch(`https://api.telegram.org/bot${config.botToken}/sendDocument`, {
     method: 'POST',
@@ -301,7 +313,7 @@ async function doEmailSend(config: AutoBackupConfig['methods']['email'], data: s
     await transporter.sendMail({
       from: `"${settings.smtpFromName || 'VoiceHub'}" <${settings.smtpFromEmail || settings.smtpUsername}>`,
       to: config.recipient,
-      subject: `VoiceHub 自动备份 - ${new Date().toISOString()}`,
+      subject: `VoiceHub 自动备份 - ${getServerDate().toISOString()}`,
       text: '数据库自动备份文件见附件。',
       attachments: [{
         filename,
@@ -341,11 +353,13 @@ export async function prepareBackup(triggeredBy: string = 'api'): Promise<{
   const methods = [
     { key: 's3' as const, name: 'S3', fn: () => doS3Upload(config.methods.s3, json, filename) },
     { key: 'webdav' as const, name: 'WebDAV', fn: () => doWebDAVUpload(config.methods.webdav, json, filename) },
+    { key: 'github' as const, name: 'GitHub', fn: () => doGithubUpload(config.methods.github, json, filename) },
     { key: 'telegram' as const, name: 'Telegram', fn: () => doTelegramSend(config.methods.telegram, json, filename) },
     { key: 'email' as const, name: 'Email', fn: () => doEmailSend(config.methods.email, json, filename) }
   ]
 
-  const enabledMethods = methods.filter(({ key }) => config.methods[key].enabled)
+  // 旧配置可能缺少新增方式，按未启用处理
+  const enabledMethods = methods.filter(({ key }) => config.methods[key]?.enabled)
 
   if (enabledMethods.length === 0) {
     throw createApiError(400, SERVER_ERROR_CODES.NO_BACKUP_METHOD_ENABLED, '没有启用任何备份方式')
@@ -510,7 +524,8 @@ export async function cleanupOldHistory(retentionDays: number = 30): Promise<num
     return count
   }
 
-  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
+  const cutoff = getServerDate()
+  cutoff.setTime(cutoff.getTime() - retentionDays * 24 * 60 * 60 * 1000)
   const result = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(backupHistory)
