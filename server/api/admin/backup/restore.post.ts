@@ -1249,6 +1249,7 @@ export default defineEventHandler(async (event) => {
                           'enableRequestTimeLimitation',
                           'forceBlockAllRequests',
                           'forcePasswordChangeOnFirstLogin',
+                          'allowRejectWithoutReason',
                           'enableReplayRequests',
                           'enableCollaborativeSubmission',
                           'enableSubmissionRemarks',

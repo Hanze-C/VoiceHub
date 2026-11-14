@@ -213,6 +213,8 @@ export const siteConfig = {
   forcePasswordChangeOnFirstLogin: '首次登录强制修改密码',
   forcePasswordChangeOnFirstLoginDesc:
     '开启后，尚未设置过密码的新用户首次登录时必须设置新密码，完成前不能访问其他功能。',
+  allowRejectWithoutReason: '允许不填写驳回理由',
+  allowRejectWithoutReasonDesc: '开启后，驳回歌曲时无需填写驳回理由。',
   hideStudentInfo: '隐藏学生详细信息',
   hideStudentInfoDesc:
     '开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。',
@@ -2681,7 +2683,9 @@ export const admin = {
       batchInfo: (count: number) => `将驳回选中的 ${count} 首歌曲`,
       batchHint: '驳回后将通过系统通知发送给各投稿人',
       reason: '驳回原因',
+      reasonOptional: '驳回原因（选填）',
       reasonPlaceholder: '请输入驳回原因，将通过系统通知发送给投稿人...',
+      reasonOptionalPlaceholder: '选填，将通过系统通知发送给投稿人...',
       addToBlacklist: '同时将此歌曲加入黑名单',
       batchAddToBlacklist: '同时将所选歌曲加入黑名单',
       blacklistHint: '加入黑名单后，该歌曲将无法再次被投稿',
@@ -5664,6 +5668,7 @@ export const serverErrors = {
   SONG_BATCH_REJECT_IDS_REQUIRED: '请先选择要驳回的歌曲',
   SONG_BATCH_REJECT_LIMIT_EXCEEDED: '单次最多驳回 {0} 首歌曲',
   SONG_BATCH_REJECT_REASON_REQUIRED: '驳回原因不能为空',
+  SONG_REJECT_REASON_REQUIRED: '驳回原因不能为空',
   SONG_GLOBAL_DAILY_LIMIT_REACHED: '今日全站投稿总量已达上限（{0} 首），请稍后再试',
   SONG_GLOBAL_WEEKLY_LIMIT_REACHED: '本周全站投稿总量已达上限（{0} 首），请稍后再试',
   SONG_GLOBAL_MONTHLY_LIMIT_REACHED: '本月全站投稿总量已达上限（{0} 首），请稍后再试',

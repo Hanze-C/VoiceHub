@@ -654,11 +654,19 @@
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
-                >{{ locale.rejectDialog.reason }}</label
+                >{{
+                  allowRejectWithoutReason
+                    ? locale.rejectDialog.reasonOptional
+                    : locale.rejectDialog.reason
+                }}</label
               >
               <textarea
                 v-model="rejectReason"
-                :placeholder="locale.rejectDialog.reasonPlaceholder"
+                :placeholder="
+                  allowRejectWithoutReason
+                    ? locale.rejectDialog.reasonOptionalPlaceholder
+                    : locale.rejectDialog.reasonPlaceholder
+                "
                 class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-4 text-sm text-text-primary focus:outline-none focus:border-error-30 min-h-[120px] resize-none transition-all"
               />
             </div>
@@ -1362,6 +1370,7 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { normalizeForMatch } from '~/utils/song-name-normalize'
@@ -1374,6 +1383,7 @@ dayjs.extend(customParseFormat)
 
 // 响应式数据
 const { can } = usePermissions()
+const { allowRejectWithoutReason } = useSiteConfig()
 
 const { showToast: showNotification } = useToast()
 const { localize: localizeServerError } = useServerErrors()
@@ -2304,7 +2314,8 @@ const batchReject = () => {
 // 确认驳回（单曲 / 批量共用对话框）
 const confirmReject = async () => {
   if (!can('songs:review')) return
-  if (!rejectReason.value.trim()) {
+  const trimmedReason = rejectReason.value.trim()
+  if (!trimmedReason && !allowRejectWithoutReason.value) {
     showNotification(getNestedMessage('errors', 'rejectReasonRequired'), 'error')
     return
   }
@@ -2319,7 +2330,7 @@ const confirmReject = async () => {
         method: 'POST',
         body: {
           songIds,
-          reason: rejectReason.value.trim(),
+          reason: trimmedReason,
           addToBlacklist: addToBlacklist.value
         }
       })
@@ -2339,7 +2350,7 @@ const confirmReject = async () => {
         method: 'POST',
         body: {
           songId: rejectSongInfo.value.id,
-          reason: rejectReason.value.trim(),
+          reason: trimmedReason,
           addToBlacklist: addToBlacklist.value
         }
       })
@@ -2361,7 +2372,7 @@ const confirmReject = async () => {
       // 批量接口按错误码本地化，避免服务端中文兜底文案在英文界面泄漏
       showNotification(getNestedMessage('errors', 'batchRejectFailed', localizeServerError(error)), 'error')
     } else {
-      showNotification(getNestedMessage('errors', 'rejectFailed', getErrorMessage(error)), 'error')
+      showNotification(getNestedMessage('errors', 'rejectFailed', localizeServerError(error)), 'error')
     }
   } finally {
     rejectLoading.value = false

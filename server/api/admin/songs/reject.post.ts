@@ -4,11 +4,15 @@ import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle
 import { eq, sql } from 'drizzle-orm'
 import { createSongRejectedNotification } from '../../../services/notificationService'
 import { recordAdminAudit } from '~~/server/utils/admin-audit'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getAllowRejectWithoutReason } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
 
   const body = await readBody(event)
+  const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
 
   if (!body.songId) {
     throw createError({
@@ -17,11 +21,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (!body.reason || !body.reason.trim()) {
-    throw createError({
-      statusCode: 400,
-      message: '驳回原因不能为空'
-    })
+  if (!reason && !(await getAllowRejectWithoutReason())) {
+    throw createApiError(400, SERVER_ERROR_CODES.SONG_REJECT_REASON_REQUIRED, '驳回原因不能为空')
   }
 
   try {
@@ -51,7 +52,7 @@ export default defineEventHandler(async (event) => {
           await tx.insert(songBlacklists).values({
             type: 'SONG',
             value: `${song.title} - ${song.artist}`,
-            reason: `歌曲驳回: ${body.reason.trim()}`,
+            reason: reason ? `歌曲驳回: ${reason}` : '歌曲驳回',
             createdBy: user.id
           })
           console.log(`歌曲已添加到黑名单`)
@@ -106,7 +107,7 @@ export default defineEventHandler(async (event) => {
       createSongRejectedNotification(
         songForNotification.requesterId,
         { title: songForNotification.title, artist: songForNotification.artist },
-        body.reason.trim()
+        reason
       )
         .then(() => {
           console.log(`已发送驳回通知给用户: ${songForNotification.requesterId}`)
@@ -126,7 +127,7 @@ export default defineEventHandler(async (event) => {
       summary: {
         title: result.deletedSong?.title,
         artist: result.deletedSong?.artist,
-        reason: body.reason.trim(),
+        reason,
         addedToBlacklist: body.addToBlacklist
       }
     })

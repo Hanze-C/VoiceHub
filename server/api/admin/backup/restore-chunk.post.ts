@@ -909,6 +909,7 @@ export default defineEventHandler(async (event) => {
               'enableRequestTimeLimitation',
               'forceBlockAllRequests',
               'forcePasswordChangeOnFirstLogin',
+              'allowRejectWithoutReason',
               'smtpEnabled',
               'smtpHost',
               'smtpPort',

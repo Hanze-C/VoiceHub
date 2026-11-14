@@ -395,6 +395,8 @@ export const systemSettings = pgTable('SystemSettings', {
   enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
   forceBlockAllRequests: boolean().default(false).notNull(),
   forcePasswordChangeOnFirstLogin: boolean('forcePasswordChangeOnFirstLogin').default(false).notNull(),
+  // 驳回歌曲时是否允许不填写驳回原因（默认关闭，即必须填写）
+  allowRejectWithoutReason: boolean('allowRejectWithoutReason').default(false).notNull(),
   enableReplayRequests: boolean('enableReplayRequests').default(false).notNull(),
   enableCollaborativeSubmission: boolean('enableCollaborativeSubmission').default(true).notNull(),
   enableSubmissionRemarks: boolean('enableSubmissionRemarks').default(false).notNull(),

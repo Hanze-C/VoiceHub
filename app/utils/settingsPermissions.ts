@@ -97,6 +97,8 @@ export const SUPER_ADMIN_ONLY_SETTING_FIELDS = [
   'registerEmailRequired',
   'registerRequiresGradeClass',
   'forcePasswordChangeOnFirstLogin',
+  // 歌曲驳回策略
+  'allowRejectWithoutReason',
   // 学生隐私与匿名投稿
   'hideStudentInfo',
   'allowAnonymousSubmission',

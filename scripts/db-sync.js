@@ -323,6 +323,7 @@ async function checkSchemaConsistency(sql) {
       'esaCaptchaScenes',
       'esaCaptchaRegion',
       'forcePasswordChangeOnFirstLogin',
+      'allowRejectWithoutReason',
       'allowOAuthRegistration',
       'allowRegister',
       'registerRequiresApproval',

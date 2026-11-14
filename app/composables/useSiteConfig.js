@@ -68,6 +68,7 @@ const siteConfig = ref({
   customOAuthDisplayName: '',
   allowRegister: false,
   submissionNoteRequiresApproval: false,
+  allowRejectWithoutReason: false,
   registerEmailRequired: false,
   registerRequiresGradeClass: false,
   legalConsentEnabled: false,
@@ -164,6 +165,7 @@ export const useSiteConfig = () => {
         customOAuthDisplayName: '',
         allowRegister: false,
         submissionNoteRequiresApproval: false,
+        allowRejectWithoutReason: false,
         registerEmailRequired: false,
         registerRequiresGradeClass: false,
         defaultTheme: 'System',
@@ -231,6 +233,9 @@ export const useSiteConfig = () => {
   const legalConsentVersion = computed(() => siteConfig.value.legalConsentVersion || '')
   const submissionNoteRequiresApproval = computed(
     () => siteConfig.value.submissionNoteRequiresApproval === true
+  )
+  const allowRejectWithoutReason = computed(
+    () => siteConfig.value.allowRejectWithoutReason === true
   )
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
@@ -326,6 +331,7 @@ export const useSiteConfig = () => {
     allowOAuthRegistration,
     allowRegister,
     submissionNoteRequiresApproval,
+    allowRejectWithoutReason,
     registerEmailRequired,
     registerRequiresGradeClass,
     legalConsentEnabled,

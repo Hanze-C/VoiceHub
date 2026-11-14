@@ -71,6 +71,8 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   enableRequestTimeLimitation: false,
   forceBlockAllRequests: false,
   forcePasswordChangeOnFirstLogin: false,
+  // 驳回歌曲时是否允许不填写驳回原因
+  allowRejectWithoutReason: false,
   smtpEnabled: false,
   smtpHost: null,
   smtpPort: 587,
@@ -170,6 +172,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'enableRequestTimeLimitation',
   'forceBlockAllRequests',
   'forcePasswordChangeOnFirstLogin',
+  'allowRejectWithoutReason',
   'smtpEnabled',
   'allowOAuthRegistration',
   'allowRegister',

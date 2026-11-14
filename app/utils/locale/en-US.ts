@@ -222,6 +222,8 @@ export const siteConfig = {
   forcePasswordChangeOnFirstLogin: 'Force Password Change on First Login',
   forcePasswordChangeOnFirstLoginDesc:
     'When enabled, new users who have never set a password must set one on first login and cannot access other features until done.',
+  allowRejectWithoutReason: 'Allow Reject Without Reason',
+  allowRejectWithoutReasonDesc: 'When enabled, songs can be rejected without a reason.',
   hideStudentInfo: 'Hide Student Details',
   hideStudentInfoDesc:
     'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
@@ -2744,8 +2746,10 @@ export const admin = {
       batchInfo: (count: number) => `Reject the selected ${count} songs`,
       batchHint: 'Each requester will be notified after rejection',
       reason: 'Reject Reason',
+      reasonOptional: 'Reject Reason (Optional)',
       reasonPlaceholder:
         'Enter the reason. It will be sent to the requester as a system notification...',
+      reasonOptionalPlaceholder: 'Optional. Sent to the requester as a system notification...',
       addToBlacklist: 'Also add this song to the blacklist',
       batchAddToBlacklist: 'Also add the selected songs to the blacklist',
       blacklistHint: 'After blacklisting, this song cannot be requested again',
@@ -5867,6 +5871,7 @@ export const serverErrors = {
   SONG_BATCH_REJECT_IDS_REQUIRED: 'Select songs to reject first',
   SONG_BATCH_REJECT_LIMIT_EXCEEDED: 'Up to {0} songs can be rejected at once',
   SONG_BATCH_REJECT_REASON_REQUIRED: 'A rejection reason is required',
+  SONG_REJECT_REASON_REQUIRED: 'A rejection reason is required',
   SONG_GLOBAL_DAILY_LIMIT_REACHED:
     'The site-wide daily submission cap ({0}) has been reached, try again later',
   SONG_GLOBAL_WEEKLY_LIMIT_REACHED:

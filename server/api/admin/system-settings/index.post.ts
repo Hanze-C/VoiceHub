@@ -812,6 +812,13 @@ export default defineEventHandler(async (event) => {
       updateData.forcePasswordChangeOnFirstLogin = body.forcePasswordChangeOnFirstLogin
     }
 
+    if (body.allowRejectWithoutReason !== undefined) {
+      if (typeof body.allowRejectWithoutReason !== 'boolean') {
+        throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'allowRejectWithoutReason 必须是布尔值')
+      }
+      updateData.allowRejectWithoutReason = body.allowRejectWithoutReason
+    }
+
     // 平台管理配置
     if (body.enabledPlatforms !== undefined || body.platformOrder !== undefined) {
       const enabled = body.enabledPlatforms !== undefined

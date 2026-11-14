@@ -6,6 +6,7 @@ import { createSongRejectedNotification } from '../../../services/notificationSe
 import { createApiError } from '~~/server/utils/apiError'
 import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getAllowRejectWithoutReason } from '~~/server/utils/system-settings-helper'
 
 // 单次批量驳回的歌曲数量上限
 const MAX_BATCH_REJECT_COUNT = 1000
@@ -35,7 +36,7 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  if (!reason) {
+  if (!reason && !(await getAllowRejectWithoutReason())) {
     throw createApiError(400, SERVER_ERROR_CODES.SONG_BATCH_REJECT_REASON_REQUIRED, '驳回原因不能为空')
   }
 
@@ -68,7 +69,7 @@ export default defineEventHandler(async (event) => {
             await tx.insert(songBlacklists).values({
               type: 'SONG',
               value,
-              reason: `歌曲驳回: ${reason}`,
+              reason: reason ? `歌曲驳回: ${reason}` : '歌曲驳回',
               createdBy: user.id
             })
           } catch (error) {

@@ -27,6 +27,12 @@ export async function getForcePasswordChangeOnFirstLogin(): Promise<boolean> {
     : false
 }
 
+/** 驳回歌曲时是否允许不填写驳回原因；读取失败按不允许处理 */
+export async function getAllowRejectWithoutReason(): Promise<boolean> {
+  const settings = await getSystemSettingsCached()
+  return settings?.allowRejectWithoutReason === true
+}
+
 /**
  * 未配置时使用内置模板；读取失败时抛错，不恢复已撤销的权限。
  */

@@ -56,6 +56,7 @@ const MUST_BE_SUPER_ADMIN = [
   /^registerRequires/,
   /^registerEmailRequired/,
   /^forcePasswordChangeOnFirstLogin/,
+  /^allowRejectWithoutReason/,
   /^telemetryEnabled/,
   /^defaultTheme$/,
   /^enabledThemes$/,

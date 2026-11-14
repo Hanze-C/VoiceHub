@@ -687,7 +687,10 @@ export async function createSongRejectedNotification(
     }
 
     // 创建通知消息
-    const message = `您投稿的歌曲《${songInfo.title} - ${songInfo.artist}》已被管理员驳回。驳回原因：${reason}`
+    const trimmedReason = typeof reason === 'string' ? reason.trim() : ''
+    const message = trimmedReason
+      ? `您投稿的歌曲《${songInfo.title} - ${songInfo.artist}》已被管理员驳回。驳回原因：${trimmedReason}`
+      : `您投稿的歌曲《${songInfo.title} - ${songInfo.artist}》已被管理员驳回。`
 
     // 创建站内通知
     const notificationResult = await db
@@ -713,7 +716,7 @@ export async function createSongRejectedNotification(
         'notification.songRejected',
         {
           songTitle: `${songInfo.title} - ${songInfo.artist}`,
-          reason
+          reason: trimmedReason
         }
       )
     } catch (error) {
